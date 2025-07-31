@@ -1,0 +1,526 @@
+openapi: 3.1.0
+
+info:
+  title: Server Service
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8002
+    description: Development server
+
+tags:
+  - name: Servers
+    description: Servers management operations
+
+paths:
+  /servers:
+    post:
+      summary: Create a new server
+      tags:
+        - Servers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServerRequest'
+              required:
+                - server_name
+                - ipv4
+                - port
+                - health_endpoint
+                - health_check_interval
+      responses:
+        201:
+          description: Server created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerInfoResponse'
+        400:
+          description: Invalid input format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        409:
+          description: Server name already exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+    get:
+      summary: List all servers with filter and pagination. The servers will be sorted by created time.
+      tags:
+        - Servers
+      parameters:
+        - name: server_name
+          in: query
+          description: Server name
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: status
+          in: query
+          description: Filter by server status
+          required: false
+          schema:
+            type: string
+            enum: [ pending, healthy, unhealthy, inactive, configuration_error, network_error]
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [server_name, created_at]
+            default: created_at
+        - name: sort_order
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum: [ asc, desc ]
+            default: asc
+      responses:
+        200:
+          description: Successfully retrieved server list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerListResponse'
+        400:
+          description: Invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerListResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+
+  /servers/{serverId}:
+    patch:
+      summary: Update server information
+      tags:
+        - Servers
+      parameters:
+        - name: serverId
+          in: path
+          required: true
+          description: ID of the server to update
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServerRequest'
+      responses:
+        200:
+          description: Server updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerInfoResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        404:
+          description: Server not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+    delete:
+      summary: Delete a server by id
+      tags:
+        - Servers
+      parameters:
+        - name: serverId
+          in: path
+          required: true
+          description: ID of the server to delete
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Server deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /servers/import:
+    post:
+      summary: 'Import servers from Excel file. Imported sheet must have these column: server_name, ipv4, port, health_endpoint, health_check_interval. Imported sheet must have header row to specified order of columns.'
+      tags:
+        - Servers
+      parameters:
+        - name: sheet_name
+          in: query
+          description: Name of the sheet to import server, if not specified, the first sheet will be used
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Excel file containing server data
+                  required: true
+      responses:
+        200:
+          description: Server imported successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportServerResponse'
+        400:
+          description: Invalid file format or data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /servers/export:
+    get:
+      summary: Export servers to Excel file
+      tags:
+        - Servers
+      parameters:
+        - name: server_name
+          in: query
+          description: Server name
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: status
+          in: query
+          description: Filter by server status
+          required: false
+          schema:
+            type: string
+            enum: [ pending, healthy, unhealthy, inactive, configuration_error, network_error ]
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ server_name, created_at ]
+            default: created_at
+        - name: sort_order
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum: [ asc, desc ]
+            default: asc
+      responses:
+        200:
+          description: Servers exported successfully
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        400:
+          description: Invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /servers/reports:
+    post:
+      summary: Generate and send a server report via email
+      tags:
+        - Servers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+      responses:
+        200:
+          description: email sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        400:
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /servers/{serverId}/uptime:
+    get:
+      tags:
+        - Servers
+      summary: Get server uptime percentage
+      parameters:
+        - name: serverId
+          in: path
+          required: true
+          description: ID of the server to update
+          schema:
+            type: string
+            format: uuid
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "2025-01-31"
+      responses:
+        200:
+          description: Get server uptime successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uptime_percentage: number
+                  format: double
+        400:
+          description: Invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+components:
+  schemas:
+    Response:
+      type: object
+      properties:
+        message:
+          type: string
+    ServerRequest:
+      type: object
+      properties:
+        server_name:
+          type: string
+        ipv4:
+          type: string
+          format: ipv4
+        port:
+          type: integer
+        health_endpoint:
+          type: string
+        health_check_interval:
+          description: health check interval in seconds (must be less than or equal to 3600 (1 hour))
+          type: integer
+    ServerInfoResponse:
+      type: object
+      properties:
+        server_id:
+          type: string
+          format: uuid
+        server_name:
+          type: string
+        status:
+          type: string
+          enum: [ pending, healthy, unhealthy, inactive, configuration_error, network_error]
+        ipv4:
+          type: string
+        port:
+          type: integer
+        health_endpoint:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        health_check_interval:
+          description: health check interval in seconds (must be less than or equal to 3600 (1 hour))
+          type: integer
+        last_heath_check:
+          type: string
+          format: date-time
+        up_time:
+          type: int
+    ImportServerResponse:
+      type: object
+      properties:
+        imported_count:
+          type: integer
+          description: Number of servers successfully imported
+        imported_servers:
+          type: array
+          description: List of successfully imported servers id
+          items:
+            type: string
+        failed_count:
+          type: integer
+          description: Number of servers that failed to import
+        failed_servers:
+          type: array
+          description: List of servers id that failed to import
+          items:
+            type: string
+    ServerListResponse:
+      type: object
+      properties:
+        servers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServerInfoResponse'
+        partial_error:
+          type: string
+    ReportRequest:
+      type: object
+      properties:
+        start_date:
+          type: string
+          format: date
+          description: The start date for the report period (inclusive), in YYYY-MM-DD format.
+          example: "2025-01-01"
+          required: true
+        end_date:
+          type: string
+          format: date
+          description: The end date for the report period (inclusive), in YYYY-MM-DD format.
+          example: "2025-01-31"
+          required: true
+        email:
+          type: string
+          format: email
+          description: The email address to which the report should be sent.
+          example: "recipient@example.com"
+          required: true
