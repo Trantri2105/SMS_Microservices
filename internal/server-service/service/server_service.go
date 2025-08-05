@@ -54,11 +54,15 @@ func generateTextMailBody(serversInfo repository.ServersHealthInformation) strin
 			"Total Servers: %d\n"+
 			"Healthy: %d\n"+
 			"Unhealthy: %d\n"+
+			"Configuration Errors: %d\n"+
+			"Network Errors: %d\n"+
 			"Inactive: %d\n\n"+
 			"Average Uptime Across All Servers: %.2f%%",
 		serversInfo.TotalServersCnt,
 		serversInfo.HealthyServersCnt,
 		serversInfo.UnhealthyServersCnt,
+		serversInfo.ConfigurationErrorServersCnt,
+		serversInfo.NetworkErrorServersCnt,
 		serversInfo.InactiveServersCnt,
 		serversInfo.AverageUptimePercentage,
 	)
@@ -80,6 +84,14 @@ func generateHTMLBody(serversInfo repository.ServersHealthInformation) string {
             <td style="border: 1px solid #dddddd; text-align: left; padding: 8px; background-color: #f2f2f2;">Unhealthy Servers:</td>
             <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">%d</td>
         </tr>
+		<tr>
+            <td style="border: 1px solid #dddddd; text-align: left; padding: 8px; background-color: #f2f2f2;">Configuration Errors:</td>
+            <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">%d</td>
+        </tr>
+		<tr>
+            <td style="border: 1px solid #dddddd; text-align: left; padding: 8px; background-color: #f2f2f2;">Network Errors:</td>
+            <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">%d</td>
+        </tr>
         <tr>
             <td style="border: 1px solid #dddddd; text-align: left; padding: 8px; background-color: #f2f2f2;">Inactive Servers:</td>
             <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">%d</td>
@@ -95,6 +107,8 @@ func generateHTMLBody(serversInfo repository.ServersHealthInformation) string {
 		serversInfo.TotalServersCnt,
 		serversInfo.HealthyServersCnt,
 		serversInfo.UnhealthyServersCnt,
+		serversInfo.ConfigurationErrorServersCnt,
+		serversInfo.NetworkErrorServersCnt,
 		serversInfo.InactiveServersCnt,
 		serversInfo.AverageUptimePercentage,
 	)

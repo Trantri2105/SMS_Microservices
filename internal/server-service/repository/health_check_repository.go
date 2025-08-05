@@ -13,11 +13,13 @@ import (
 )
 
 type ServersHealthInformation struct {
-	TotalServersCnt         int
-	HealthyServersCnt       int
-	UnhealthyServersCnt     int
-	InactiveServersCnt      int
-	AverageUptimePercentage float64
+	TotalServersCnt              int
+	HealthyServersCnt            int
+	UnhealthyServersCnt          int
+	InactiveServersCnt           int
+	ConfigurationErrorServersCnt int
+	NetworkErrorServersCnt       int
+	AverageUptimePercentage      float64
 }
 
 type HealthCheckRepository interface {
@@ -142,6 +144,10 @@ func (h *healthCheckRepository) GetAllServersHealthInformation(ctx context.Conte
 			serversHealth.HealthyServersCnt += 1
 		} else if status == model.ServerStatusUnhealthy {
 			serversHealth.UnhealthyServersCnt += 1
+		} else if status == model.ServerStatusConfigurationError {
+			serversHealth.ConfigurationErrorServersCnt += 1
+		} else if status == model.ServerStatusNetworkError {
+			serversHealth.NetworkErrorServersCnt += 1
 		} else {
 			serversHealth.InactiveServersCnt += 1
 		}

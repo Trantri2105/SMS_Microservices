@@ -12,6 +12,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/xuri/excelize/v2"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
@@ -32,7 +33,7 @@ type ServerHandler interface {
 }
 
 type serverHandler struct {
-	logger        Logger
+	logger        *zap.Logger
 	serverService service.ServerService
 	validator     *validator.Validate
 }
@@ -83,7 +84,7 @@ func (s *serverHandler) GetServerUptimePercentage() gin.HandlerFunc {
 		res, err := s.serverService.GetServerUptimePercentage(c, id, startTime, endTimeFinal)
 		if err != nil {
 			err = fmt.Errorf("ServerHandler.GetServerUptimePercentage error: %w", err)
-			s.logger.LoggingError(c, err, fmt.Sprintf("failed to get uptime percentage of server %s from %s to %s", id, startTime, endTime), zap.ErrorLevel)
+			s.loggingError(c, err, fmt.Sprintf("failed to get uptime percentage of server %s from %s to %s", id, startTime, endTime), zap.ErrorLevel)
 			c.JSON(http.StatusInternalServerError, response.Response{
 				Message: "Internal Server Error",
 			})
@@ -120,11 +121,8 @@ func (s *serverHandler) GetServers() gin.HandlerFunc {
 		if l <= 0 {
 			l = 10
 		}
-		if l > 50 {
-			l = 50
-		}
 		status := c.Query("status")
-		if status != "" && status != model.ServerStatusPending && status != model.ServerStatusHealthy && status != model.ServerStatusUnhealthy && status != model.ServerStatusInactive && status != model.ServerStatusConfigurationError {
+		if status != "" && status != model.ServerStatusPending && status != model.ServerStatusHealthy && status != model.ServerStatusUnhealthy && status != model.ServerStatusInactive && status != model.ServerStatusConfigurationError && status != model.ServerStatusNetworkError {
 			c.JSON(http.StatusBadRequest, response.Response{
 				Message: "Invalid status",
 			})
@@ -147,7 +145,7 @@ func (s *serverHandler) GetServers() gin.HandlerFunc {
 		servers, err := s.serverService.GetServers(c, serverName, status, sortBy, sortOrder, l, o)
 		if err != nil {
 			err = fmt.Errorf("ServerHandler.GetServers: %w", err)
-			s.logger.LoggingError(c, err, "failed to get servers", zap.ErrorLevel)
+			s.loggingError(c, err, "failed to get servers", zap.ErrorLevel)
 			c.JSON(http.StatusInternalServerError, response.Response{
 				Message: "Internal Server Error",
 			})
@@ -196,11 +194,8 @@ func (s *serverHandler) ExportServersToExcelFile() gin.HandlerFunc {
 		if l <= 0 {
 			l = 10
 		}
-		if l > 50 {
-			l = 50
-		}
 		status := c.Query("status")
-		if status != "" && status != model.ServerStatusPending && status != model.ServerStatusHealthy && status != model.ServerStatusUnhealthy && status != model.ServerStatusInactive && status != model.ServerStatusConfigurationError {
+		if status != "" && status != model.ServerStatusPending && status != model.ServerStatusHealthy && status != model.ServerStatusUnhealthy && status != model.ServerStatusInactive && status != model.ServerStatusConfigurationError && status != model.ServerStatusNetworkError {
 			c.JSON(http.StatusBadRequest, response.Response{
 				Message: "Invalid status",
 			})
@@ -223,7 +218,7 @@ func (s *serverHandler) ExportServersToExcelFile() gin.HandlerFunc {
 		servers, err := s.serverService.GetServers(c, serverName, status, sortBy, sortOrder, l, o)
 		if err != nil {
 			err = fmt.Errorf("ServerHandler.ExportServersToExcelFile: %w", err)
-			s.logger.LoggingError(c, err, "failed to export servers", zap.ErrorLevel)
+			s.loggingError(c, err, "failed to export servers", zap.ErrorLevel)
 			c.JSON(http.StatusInternalServerError, response.Response{
 				Message: "Internal server error",
 			})
@@ -233,7 +228,7 @@ func (s *serverHandler) ExportServersToExcelFile() gin.HandlerFunc {
 		defer file.Close()
 		if err != nil {
 			err = fmt.Errorf("ServerHandler.ExportServersToExcelFile: %w", err)
-			s.logger.LoggingError(c, err, "failed to export servers", zap.ErrorLevel)
+			s.loggingError(c, err, "failed to export servers", zap.ErrorLevel)
 			c.JSON(http.StatusInternalServerError, response.Response{
 				Message: "Internal server error",
 			})
@@ -244,7 +239,7 @@ func (s *serverHandler) ExportServersToExcelFile() gin.HandlerFunc {
 		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
 		if err = file.Write(c.Writer); err != nil {
 			err = fmt.Errorf("ServerHandler.ExportServersToExcelFile: %w", err)
-			s.logger.LoggingError(c, err, "failed to export servers", zap.ErrorLevel)
+			s.loggingError(c, err, "failed to export servers", zap.ErrorLevel)
 			c.JSON(http.StatusInternalServerError, response.Response{
 				Message: "Internal server error",
 			})
@@ -329,7 +324,7 @@ func (s *serverHandler) ReportAllServersHealthInfo() gin.HandlerFunc {
 		err = s.serverService.ReportServersInformation(c, startTime, endTimeFinal, req.Email)
 		if err != nil {
 			err = fmt.Errorf("ServerHandler.ReportAllServersHealthInfo: %w", err)
-			s.logger.LoggingError(c, err, "failed to reports servers", zap.ErrorLevel)
+			s.loggingError(c, err, "failed to reports servers", zap.ErrorLevel)
 			c.JSON(http.StatusInternalServerError, response.Response{
 				Message: "Internal server error",
 			})
@@ -373,7 +368,7 @@ func (s *serverHandler) CreateServer() gin.HandlerFunc {
 				})
 			default:
 				err = fmt.Errorf("ServerHandler.CreateServer: %w", err)
-				s.logger.LoggingError(c, err, "failed to create server", zap.ErrorLevel)
+				s.loggingError(c, err, "failed to create server", zap.ErrorLevel)
 				c.JSON(http.StatusInternalServerError, response.Response{
 					Message: "Internal server error",
 				})
@@ -430,7 +425,7 @@ func (s *serverHandler) ImportServersFromExcelFile() gin.HandlerFunc {
 				})
 			default:
 				err = fmt.Errorf("ServerHandler.ImportServersFromExcelFile: %w", err)
-				s.logger.LoggingError(c, err, "failed to import server", zap.ErrorLevel)
+				s.loggingError(c, err, "failed to import server", zap.ErrorLevel)
 				c.JSON(http.StatusInternalServerError, response.Response{
 					Message: "Internal server error",
 				})
@@ -441,7 +436,7 @@ func (s *serverHandler) ImportServersFromExcelFile() gin.HandlerFunc {
 		importedServers, nonImportedServers, err := s.serverService.CreateServers(c, validServers)
 		if err != nil {
 			err = fmt.Errorf("ServerHandler.ImportServersFromExcelFile: %w", err)
-			s.logger.LoggingError(c, err, "failed to import server", zap.ErrorLevel)
+			s.loggingError(c, err, "failed to import server", zap.ErrorLevel)
 			c.JSON(http.StatusInternalServerError, response.Response{
 				Message: "Internal server error",
 			})
@@ -582,7 +577,7 @@ func (s *serverHandler) UpdateServer() gin.HandlerFunc {
 				})
 			default:
 				err = fmt.Errorf("ServerHandler.UpdateServer: %w", err)
-				s.logger.LoggingError(c, err, fmt.Sprintf("failed to update server %s", id), zap.ErrorLevel)
+				s.loggingError(c, err, fmt.Sprintf("failed to update server %s", id), zap.ErrorLevel)
 				c.JSON(http.StatusInternalServerError, response.Response{
 					Message: "Internal server error",
 				})
@@ -609,7 +604,7 @@ func (s *serverHandler) DeleteServer() gin.HandlerFunc {
 		err := s.serverService.DeleteServer(c, id)
 		if err != nil {
 			err = fmt.Errorf("ServerHandler.DeleteServer: %w", err)
-			s.logger.LoggingError(c, err, fmt.Sprintf("failed to delete server %s", id), zap.ErrorLevel)
+			s.loggingError(c, err, fmt.Sprintf("failed to delete server %s", id), zap.ErrorLevel)
 			c.JSON(http.StatusInternalServerError, response.Response{
 				Message: "Internal server error",
 			})
@@ -621,7 +616,19 @@ func (s *serverHandler) DeleteServer() gin.HandlerFunc {
 	}
 }
 
-func NewServerHandler(logger Logger, serverService service.ServerService) ServerHandler {
+func (s *serverHandler) loggingError(c *gin.Context, err error, errDescription string, logLevel zapcore.Level) {
+	var data []zapcore.Field
+	data = append(data, zap.Error(err))
+	data = append(data, zap.String("http_method", c.Request.Method))
+	data = append(data, zap.String("http_path", c.Request.URL.Path))
+	userId := c.GetHeader("X-User-Id")
+	if userId != "" {
+		data = append(data, zap.String("user_id", userId))
+	}
+	s.logger.Log(logLevel, errDescription, data...)
+}
+
+func NewServerHandler(logger *zap.Logger, serverService service.ServerService) ServerHandler {
 	return &serverHandler{
 		logger:        logger,
 		serverService: serverService,

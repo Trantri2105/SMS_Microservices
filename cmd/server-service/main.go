@@ -81,11 +81,8 @@ func main() {
 	serverRepo := repository.NewServerRepository(db)
 	healthcheckRepo := repository.NewHealthCheckRepository(db, esClient)
 	mailSender := mail.NewMailSender(appConfig.Mail.Email, appConfig.Mail.Password, appConfig.Mail.Host, appConfig.Mail.Port)
-
 	serverService := service.NewServerService(serverRepo, healthcheckRepo, mailSender)
-
-	handlerLogger := handler.NewLogger(zapLogger)
-	serverHandler := handler.NewServerHandler(handlerLogger, serverService)
+	serverHandler := handler.NewServerHandler(zapLogger, serverService)
 
 	m := middleware.NewAuthMiddleware()
 
