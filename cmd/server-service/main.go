@@ -13,15 +13,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/robfig/cron/v3"
-	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -125,7 +126,6 @@ func main() {
 	zapLogger.Info("shutting down server...")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-
 	if err = srv.Shutdown(ctx); err != nil {
 		zapLogger.Error("server forced to shutdown:", zap.Error(err))
 	}

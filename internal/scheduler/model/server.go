@@ -4,7 +4,6 @@ import "time"
 
 type Server struct {
 	ID                  string
-	Status              string
 	Ipv4                string
 	Port                int
 	HealthEndpoint      string

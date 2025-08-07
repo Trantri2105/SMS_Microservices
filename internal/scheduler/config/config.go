@@ -6,22 +6,12 @@ import (
 )
 
 type AppConfig struct {
-	Server        ServerConfig
-	Postgres      PostgresConfig
-	Elasticsearch ElasticsearchConfig
-	Mail          MailConfig
-}
-
-type MailConfig struct {
-	Email            string `envconfig:"MAIL_EMAIL" required:"true"`
-	Password         string `envconfig:"MAIL_PASSWORD" required:"true"`
-	Host             string `envconfig:"MAIL_HOST" required:"true"`
-	Port             int    `envconfig:"MAIL_PORT" required:"true"`
-	AdminMailAddress string `envconfig:"MAIL_ADMIN_EMAIL" required:"true"`
+	Server   ServerConfig
+	Postgres PostgresConfig
+	Kafka    KafkaConfig
 }
 
 type ServerConfig struct {
-	Port     string `envconfig:"SERVER_PORT" default:"8080"`
 	LogLevel string `envconfig:"LOG_LEVEL" default:"info"`
 }
 
@@ -33,8 +23,12 @@ type PostgresConfig struct {
 	DBName   string `envconfig:"POSTGRES_DB" required:"true"`
 }
 
-type ElasticsearchConfig struct {
-	Addresses []string `envconfig:"ELASTICSEARCH_ADDRESSES" required:"true"`
+type KafkaConfig struct {
+	Brokers         []string `envconfig:"KAFKA_BROKERS" required:"true"`
+	ConsumerTopic   string   `envconfig:"KAFKA_CONSUMER_TOPIC" required:"true"`
+	ProducerTopic   string   `envconfig:"KAFKA_PRODUCER_TOPIC" required:"true"`
+	ConsumerGroupID string   `envconfig:"KAFKA_CONSUMER_GROUP_ID" required:"true"`
+	ConsumerCnt     int      `envconfig:"KAFKA_CONSUMER_CNT" required:"true"`
 }
 
 func LoadConfig(path string) (AppConfig, error) {

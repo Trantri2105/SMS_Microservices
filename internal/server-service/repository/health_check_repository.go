@@ -7,9 +7,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/elastic/go-elasticsearch/v9"
 	"gorm.io/gorm"
-	"time"
 )
 
 type ServersHealthInformation struct {

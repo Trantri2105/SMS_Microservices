@@ -14,13 +14,23 @@ import (
 
 type ServerRepository interface {
 	CreateServer(ctx context.Context, server model.Server) (model.Server, error)
-	GetServerByIds(ctx context.Context, serverIds []string) ([]model.Server, error)
+	GetMultipleServersByIds(ctx context.Context, serverIds []string) ([]model.Server, error)
 	UpdateServer(ctx context.Context, updatedData model.Server) (model.Server, error)
 	DeleteServerById(ctx context.Context, serverId string) error
+	GetAllServers(ctx context.Context) ([]model.Server, error)
 }
 
 type serverRepository struct {
 	db *gorm.DB
+}
+
+func (s *serverRepository) GetAllServers(ctx context.Context) ([]model.Server, error) {
+	var servers []model.Server
+	res := s.db.WithContext(ctx).Find(&servers)
+	if res.Error != nil {
+		return nil, fmt.Errorf("ServerRepository.GetAllServers: %w", res.Error)
+	}
+	return servers, nil
 }
 
 func (s *serverRepository) CreateServer(ctx context.Context, server model.Server) (model.Server, error) {
@@ -37,7 +47,7 @@ func (s *serverRepository) CreateServer(ctx context.Context, server model.Server
 	return server, nil
 }
 
-func (s *serverRepository) GetServerByIds(ctx context.Context, serverIds []string) ([]model.Server, error) {
+func (s *serverRepository) GetMultipleServersByIds(ctx context.Context, serverIds []string) ([]model.Server, error) {
 	var servers []model.Server
 	result := s.db.WithContext(ctx).Where("id IN ?", serverIds).Find(&servers)
 	if result.Error != nil {
