@@ -3,7 +3,6 @@ package consumer
 import (
 	"VCS_SMS_Microservice/internal/scheduler/model"
 	"VCS_SMS_Microservice/internal/scheduler/repository"
-	"VCS_SMS_Microservice/internal/scheduler/scheduler"
 	"context"
 	"encoding/json"
 	"errors"
@@ -21,11 +20,10 @@ type ServerConsumer interface {
 }
 
 type serverConsumer struct {
-	repo      repository.ServerRepository
-	timewheel scheduler.TimeWheel
-	kafka     *kafka.Reader
-	logger    *zap.Logger
-	stopChan  chan struct{}
+	repo     repository.ServerRepository
+	kafka    *kafka.Reader
+	logger   *zap.Logger
+	stopChan chan struct{}
 }
 
 type serverEvent struct {
@@ -49,84 +47,89 @@ func (s *serverConsumer) Start() {
 		for {
 			m, err := s.kafka.FetchMessage(context.Background())
 			if err != nil {
-				err = fmt.Errorf("ServerConsumer.Start: %w", err)
-				s.logger.Log(zap.ErrorLevel, "failed to fetch message", zap.Error(err))
 				if errors.Is(err, io.EOF) {
 					return
 				}
+				err = fmt.Errorf("ServerConsumer.Start: %w", err)
+				s.logger.Log(zap.ErrorLevel, "failed to fetch message", zap.Error(err))
 				continue
 			}
 			if m.Value == nil {
 				continue
 			}
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			var event serverEvent
-			if e := json.Unmarshal(m.Value, &event); e != nil {
-				err = fmt.Errorf("ServerConsumer.Start: %w", e)
+			if err = json.Unmarshal(m.Value, &event); err != nil {
+				err = fmt.Errorf("ServerConsumer.Start: %w", err)
 				s.logger.Log(zap.ErrorLevel, "failed to unmarshal message", zap.Error(err))
+				err = s.kafka.CommitMessages(ctx, m)
+				cancel()
+				if err != nil {
+					err = fmt.Errorf("consumer.Start: %w", err)
+					s.logger.Log(zap.ErrorLevel, "failed to commit messages", zap.Error(err))
+				}
 				continue
 			}
 			switch event.Payload.Op {
 			case "c":
-				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				createdServer, e := s.repo.CreateServer(ctx, model.Server{
+				_, err = s.repo.CreateServer(ctx, model.Server{
 					ID:                  event.Payload.After.Id,
 					Ipv4:                event.Payload.After.Ipv4,
 					Port:                event.Payload.After.Port,
 					HealthEndpoint:      event.Payload.After.HealthEndpoint,
 					HealthCheckInterval: event.Payload.After.HealthCheckInterval,
+					NextHealthCheckAt:   time.Now().Add(time.Duration(event.Payload.After.HealthCheckInterval) * time.Second),
 				})
-				cancel()
-				if e != nil {
-					err = fmt.Errorf("ServerConsumer.Start: %w", e)
+				if err != nil {
+					cancel()
+					err = fmt.Errorf("ServerConsumer.Start: %w", err)
 					s.logger.Log(zap.ErrorLevel, "failed to create server", zap.Error(err))
 					continue
 				}
-				s.timewheel.AddServer(createdServer)
 			case "u":
-				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				_, e := s.repo.UpdateServer(ctx, model.Server{
+				_, err = s.repo.UpdateServer(ctx, model.Server{
 					ID:                  event.Payload.After.Id,
 					Ipv4:                event.Payload.After.Ipv4,
 					Port:                event.Payload.After.Port,
 					HealthEndpoint:      event.Payload.After.HealthEndpoint,
 					HealthCheckInterval: event.Payload.After.HealthCheckInterval,
 				})
-				cancel()
-				if e != nil {
-					err = fmt.Errorf("ServerConsumer.Start: %w", e)
+				if err != nil {
+					cancel()
+					err = fmt.Errorf("ServerConsumer.Start: %w", err)
 					s.logger.Log(zap.ErrorLevel, "failed to update server", zap.Error(err))
 					continue
 				}
 			case "d":
-				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				e := s.repo.DeleteServerById(ctx, event.Payload.Before.Id)
-				cancel()
-				if e != nil {
-					err = fmt.Errorf("ServerConsumer.Start: %w", e)
+				err = s.repo.DeleteServerById(ctx, event.Payload.Before.Id)
+				if err != nil {
+					cancel()
+					err = fmt.Errorf("ServerConsumer.Start: %w", err)
 					s.logger.Log(zap.ErrorLevel, "failed to delete server", zap.Error(err))
 					continue
 				}
 			default:
 				s.logger.Log(zap.InfoLevel, "unknown event", zap.String("event", event.Payload.Op))
 			}
-			err = s.kafka.CommitMessages(context.Background(), m)
+			err = s.kafka.CommitMessages(ctx, m)
+			cancel()
 			if err != nil {
 				err = fmt.Errorf("ServerConsumer.Start: %w", err)
-				s.logger.Log(zap.ErrorLevel, "failed to commit message", zap.Error(err))
+				s.logger.Log(zap.ErrorLevel, "failed to commit messages", zap.Error(err))
 			}
 		}
 	}()
 }
 
+// Stop consumer will also close kafka reader
 func (s *serverConsumer) Stop() {
 	s.kafka.Close()
 }
 
-func NewServerConsumer(repo repository.ServerRepository, tw scheduler.TimeWheel, logger *zap.Logger, kafka *kafka.Reader) ServerConsumer {
+func NewServerConsumer(repo repository.ServerRepository, logger *zap.Logger, kafka *kafka.Reader) ServerConsumer {
 	return &serverConsumer{
-		repo:      repo,
-		timewheel: tw,
-		kafka:     kafka,
-		logger:    logger,
+		repo:   repo,
+		kafka:  kafka,
+		logger: logger,
 	}
 }

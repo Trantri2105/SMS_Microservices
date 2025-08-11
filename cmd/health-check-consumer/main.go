@@ -1,10 +1,8 @@
 package main
 
 import (
-	"VCS_SMS_Microservice/internal/scheduler/config"
-	"VCS_SMS_Microservice/internal/scheduler/consumer"
-	"VCS_SMS_Microservice/internal/scheduler/repository"
-	"VCS_SMS_Microservice/internal/scheduler/scheduler"
+	health_check_consumer "VCS_SMS_Microservice/internal/health-check-consumer"
+	"VCS_SMS_Microservice/internal/server-service/repository"
 	"VCS_SMS_Microservice/pkg/infra"
 	"VCS_SMS_Microservice/pkg/logger"
 	"fmt"
@@ -17,13 +15,13 @@ import (
 )
 
 func main() {
-	appConfig, err := config.LoadConfig("./.env")
+	appConfig, err := health_check_consumer.LoadConfig("./.env")
 	if err != nil {
 		log.Fatal(fmt.Sprintf("load config error: %v", err))
 	}
 
 	// set up logger
-	fileSyncer, err := logger.NewReopenableWriteSyncer("./log/scheduler.log")
+	fileSyncer, err := logger.NewReopenableWriteSyncer("./log/health-check-consumer.log")
 	zapLogger := logger.NewLogger(appConfig.Server.LogLevel, fileSyncer)
 	defer zapLogger.Sync()
 	c := make(chan os.Signal, 1)
@@ -61,13 +59,11 @@ func main() {
 
 	serverRepo := repository.NewServerRepository(db)
 
-	consumers := make([]consumer.ServerConsumer, appConfig.Kafka.ConsumerCnt)
+	consumers := make([]health_check_consumer.HealthCheckConsumer, appConfig.Kafka.ConsumerCnt)
 	for i := 0; i < appConfig.Kafka.ConsumerCnt; i++ {
-		consumers[i] = consumer.NewServerConsumer(serverRepo, zapLogger, infra.NewKafkaReader(appConfig.Kafka.Brokers, appConfig.Kafka.ConsumerGroupID, appConfig.Kafka.ConsumerTopic))
+		consumers[i] = health_check_consumer.NewHealthCheckConsumer(infra.NewKafkaReader(appConfig.Kafka.Brokers, appConfig.Kafka.ConsumerGroupID, appConfig.Kafka.ConsumerTopic), serverRepo, zapLogger)
 		consumers[i].Start()
 	}
-	s := scheduler.NewServerScheduler(zapLogger, serverRepo, infra.NewKafkaWriter(appConfig.Kafka.Brokers, appConfig.Kafka.ProducerTopic))
-	s.Start()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -76,6 +72,5 @@ func main() {
 	for i := 0; i < appConfig.Kafka.ConsumerCnt; i++ {
 		consumers[i].Stop()
 	}
-	s.Stop()
 	zapLogger.Info("server exiting")
 }

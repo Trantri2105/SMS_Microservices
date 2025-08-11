@@ -4,52 +4,35 @@ import (
 	apperrors "VCS_SMS_Microservice/internal/scheduler/errors"
 	"VCS_SMS_Microservice/internal/scheduler/model"
 	"context"
-	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 type ServerRepository interface {
 	CreateServer(ctx context.Context, server model.Server) (model.Server, error)
-	GetMultipleServersByIds(ctx context.Context, serverIds []string) ([]model.Server, error)
+	GetServersForHealthCheck(ctx context.Context) ([]model.Server, error)
 	UpdateServer(ctx context.Context, updatedData model.Server) (model.Server, error)
 	DeleteServerById(ctx context.Context, serverId string) error
-	GetAllServers(ctx context.Context) ([]model.Server, error)
+	UpdateServersNextHealthCheckByIds(ctx context.Context, serverIds []string) error
 }
 
 type serverRepository struct {
 	db *gorm.DB
 }
 
-func (s *serverRepository) GetAllServers(ctx context.Context) ([]model.Server, error) {
-	var servers []model.Server
-	res := s.db.WithContext(ctx).Find(&servers)
-	if res.Error != nil {
-		return nil, fmt.Errorf("ServerRepository.GetAllServers: %w", res.Error)
-	}
-	return servers, nil
-}
-
 func (s *serverRepository) CreateServer(ctx context.Context, server model.Server) (model.Server, error) {
-	result := s.db.WithContext(ctx).Create(&server)
+	result := s.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&server)
 	if result.Error != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(result.Error, &pgErr) && pgErr.Code == "23505" {
-			if pgErr.ConstraintName == "servers_server_name_key" {
-				return server, fmt.Errorf("ServerRepository.CreateServer: %w", apperrors.ErrServerNameAlreadyExists)
-			}
-		}
 		return server, fmt.Errorf("ServerRepository.CreateServer: %w", result.Error)
 	}
 	return server, nil
 }
 
-func (s *serverRepository) GetMultipleServersByIds(ctx context.Context, serverIds []string) ([]model.Server, error) {
+func (s *serverRepository) GetServersForHealthCheck(ctx context.Context) ([]model.Server, error) {
 	var servers []model.Server
-	result := s.db.WithContext(ctx).Where("id IN ?", serverIds).Find(&servers)
+	result := s.db.WithContext(ctx).Where("next_health_check_at <= NOW()").Find(&servers)
 	if result.Error != nil {
 		return servers, fmt.Errorf("ServerRepository.GetServerById: %w", result.Error)
 	}
@@ -66,6 +49,14 @@ func (s *serverRepository) UpdateServer(ctx context.Context, updatedData model.S
 		return server, fmt.Errorf("ServerRepository.UpdateServer: %w", apperrors.ErrServerNotFound)
 	}
 	return server, nil
+}
+
+func (s *serverRepository) UpdateServersNextHealthCheckByIds(ctx context.Context, serverIds []string) error {
+	res := s.db.WithContext(ctx).Model(&model.Server{}).Where("id IN ?", serverIds).Update("next_health_check_at", gorm.Expr("NOW() + (health_check_interval * INTERVAL '1 second')"))
+	if res.Error != nil {
+		return fmt.Errorf("ServerRepository.UpdateServersNextHealthCheckByIds: %w", res.Error)
+	}
+	return nil
 }
 
 func (s *serverRepository) DeleteServerById(ctx context.Context, serverId string) error {

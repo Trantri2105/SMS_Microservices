@@ -8,6 +8,7 @@ type Server struct {
 	Port                int
 	HealthEndpoint      string
 	HealthCheckInterval int //seconds
+	NextHealthCheckAt   time.Time
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 }

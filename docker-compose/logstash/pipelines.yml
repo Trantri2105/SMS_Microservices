@@ -1,0 +1,4 @@
+- pipeline.id: health-checks-pipeline
+  path.config: "/usr/share/logstash/pipeline/health_checks.conf"
+- pipeline.id: logs-pipeline
+  path.config: "/usr/share/logstash/pipeline/logs.conf"

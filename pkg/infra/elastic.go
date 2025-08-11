@@ -2,8 +2,9 @@ package infra
 
 import (
 	"context"
-	"github.com/elastic/go-elasticsearch/v9"
 	"time"
+
+	"github.com/elastic/go-elasticsearch/v9"
 )
 
 type ElasticsearchConfig struct {

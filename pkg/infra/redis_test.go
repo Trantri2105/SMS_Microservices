@@ -2,12 +2,13 @@ package infra
 
 import (
 	"context"
+	"log"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	tcredis "github.com/testcontainers/testcontainers-go/modules/redis"
-	"log"
-	"testing"
 )
 
 func TestNewRedisConnection(t *testing.T) {

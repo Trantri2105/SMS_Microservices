@@ -67,7 +67,7 @@ type HealthCheckResponse struct {
 	Timestamp  time.Time
 }
 
-func NewManagedServerClient(maxRetries int, requestTimeout time.Duration, initialBackoff time.Duration) ServerClient {
+func NewServerClient(maxRetries int, requestTimeout time.Duration, initialBackoff time.Duration) ServerClient {
 	return &serverClient{
 		client: &http.Client{
 			Timeout: requestTimeout,

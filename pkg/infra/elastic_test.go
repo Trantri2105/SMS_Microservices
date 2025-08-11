@@ -2,11 +2,12 @@ package infra
 
 import (
 	"context"
+	"log"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/elasticsearch"
-	"log"
-	"testing"
 )
 
 func TestNewElasticSearchConnection(t *testing.T) {
