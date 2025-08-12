@@ -1,0 +1,27 @@
+{
+  "mappings": {
+    "properties": {
+      "server_id": {
+        "type": "keyword"
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "status_numeric": {
+        "type": "integer"
+      },
+      "latency_ms": {
+        "type": "long"
+      },
+      "attempts": {
+        "type": "integer"
+      },
+      "timestamp": {
+        "type": "date"
+      },
+      "interval_since_last_health_check_ms": {
+        "type": "long"
+      }
+    }
+  }
+}

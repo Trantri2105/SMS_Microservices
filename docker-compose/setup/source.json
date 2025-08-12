@@ -2,7 +2,7 @@
     "name": "postgres-source-connector",
     "config": {
      "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
-     "database.hostname": "pg",
+     "database.hostname": "pg-server-service",
      "database.port": "5432",
      "database.user": "admin",
      "database.password": "123456",

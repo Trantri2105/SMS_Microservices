@@ -2,3 +2,5 @@
   path.config: "/usr/share/logstash/pipeline/health_checks.conf"
 - pipeline.id: logs-pipeline
   path.config: "/usr/share/logstash/pipeline/logs.conf"
+- pipeline.id: servers-pipeline
+  path.config: "/usr/share/logstash/pipeline/servers.conf"

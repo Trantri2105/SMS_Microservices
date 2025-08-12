@@ -2,18 +2,17 @@ services:
   kafka:
     image: confluentinc/cp-kafka:latest
     ports:
-      - "9092:9092"
-      - "9093:9093"
+      - "29092:29092"
     environment:
       KAFKA_KRAFT_MODE: "true"
       KAFKA_PROCESS_ROLES: controller,broker
       KAFKA_NODE_ID: 1
       KAFKA_CONTROLLER_QUORUM_VOTERS: "1@localhost:9093"
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       CLUSTER_ID: "Mk3OEYBSD34fcwNTJENDM2Qk"
@@ -24,20 +23,89 @@ services:
       retries: 5
       start_period: 30s
 
+  es:
+   image: docker.elastic.co/elasticsearch/elasticsearch:8.17.4
+   environment:
+     node.name: es
+     cluster.name: es-docker-cluster
+     ES_JAVA_OPTS: -Xms512m -Xmx512m
+     xpack.security.enabled: false
+     discovery.type: single-node
+   healthcheck:
+     test: [ "CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health | grep -vq '\"status\":\"red\"'" ]
+     interval: 15s
+     timeout: 10s
+     retries: 5
+     start_period: 30s
+   ports:
+     - "9200:9200"
+
+  kibana:
+   image: docker.elastic.co/kibana/kibana:8.17.4
+   environment:
+     ELASTICSEARCH_HOSTS: http://es:9200
+   ports:
+     - "5601:5601"
+
+  logstash:
+    image: logstash:9.0.2
+    depends_on:
+      init-services:
+        condition: service_completed_successfully
+    ports:
+      - "5044:5044"
+      - "9600:9600"
+    volumes:
+      - ./logstash/pipelines.yml:/usr/share/logstash/config/pipelines.yml
+      - ./logstash/pipeline/health_checks.conf:/usr/share/logstash/pipeline/health_checks.conf
+      - ./logstash/pipeline/logs.conf:/usr/share/logstash/pipeline/logs.conf
+      - ./logstash/pipeline/servers.conf:/usr/share/logstash/pipeline/servers.conf
+    environment:
+      - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
+
+  init-services:
+    image: confluentinc/cp-kafka:7.2.15
+    container_name: init-services
+    depends_on:
+      kafka:
+        condition: service_healthy
+      source-connector:
+        condition: service_healthy
+      es:
+        condition: service_healthy
+    volumes:
+      - ./setup:/setup
+    command: [ "bash", "/setup/setup.sh" ]
+
   pg-server-service:
-      image: postgres:17.4
-      ports:
-        - "5432:5432"
-      environment:
-        POSTGRES_USER: admin
-        POSTGRES_PASSWORD: 123456
-      healthcheck:
-        test: [ "CMD-SHELL", "pg_isready -U admin" ]
-        interval: 15s
-        timeout: 5s
-        retries: 5
-      volumes:
-        - ./init_server_service.sql:/docker-entrypoint-initdb.d/init.sql
+    image: postgres:17.4
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./init_server_service.sql:/docker-entrypoint-initdb.d/init.sql
+
+  pg-scheduler:
+    image: postgres:17.4
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./init_scheduler.sql:/docker-entrypoint-initdb.d/init.sql
 
   source-connector:
       image: debezium/connect:3.0.0.Final
@@ -67,3 +135,105 @@ services:
         timeout: 10s
         retries: 5
         start_period: 30s
+
+  server-service:
+    build:
+      context: ../
+      dockerfile: ./build/server-service/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      POSTGRES_HOST: pg-server-service
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: servers
+
+      ELASTICSEARCH_ADDRESSES: http://es:9200
+
+      SERVER_PORT: 8080
+      LOG_LEVEL: info
+
+      MAIL_EMAIL: tringuyenhn03@gmail.com
+      MAIL_PASSWORD: zxda bgjn aqhb yppb
+      MAIL_HOST: smtp.gmail.com
+      MAIL_PORT: 587
+      MAIL_ADMIN_EMAIL: tringuyenhn03@gmail.com
+    volumes:
+      - app-logs:/app/log
+    depends_on:
+      init-services:
+        condition: service_completed_successfully
+
+  scheduler:
+    build:
+      context: ../
+      dockerfile: ./build/scheduler/Dockerfile
+    environment:
+      POSTGRES_HOST: pg-scheduler
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: scheduler
+
+      LOG_LEVEL: info
+
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_CONSUMER_TOPIC: server-svc.public.servers
+      KAFKA_PRODUCER_TOPIC: server_checks_events
+      KAFKA_CONSUMER_GROUP_ID: scheduler-consumers
+      KAFKA_CONSUMER_CNT: 3
+    volumes:
+      - app-logs:/app/log
+    depends_on:
+      init-services:
+        condition: service_completed_successfully
+      pg-scheduler:
+        condition: service_healthy
+
+  health-checker:
+    build:
+      context: ../
+      dockerfile: ./build/health-checker/Dockerfile
+    environment:
+      LOG_LEVEL: info
+      MAX_RETRIES: 5
+      INITIAL_BACKOFF: 1s
+      REQUEST_TIMEOUT: 1s
+
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_CONSUMER_TOPIC: server-checks-events
+      KAFKA_PRODUCER_TOPIC: health_checks_events
+      KAFKA_CONSUMER_GROUP_ID: health-checkers-consumers
+      KAFKA_CONSUMER_CNT: 3
+    volumes:
+      - app-logs:/app/log
+    depends_on:
+      init-services:
+        condition: service_completed_successfully
+
+  health-check-consumer:
+    build:
+      context: ../
+      dockerfile: ./build/health-check-consumer/Dockerfile
+    environment:
+      LOG_LEVEL: info
+
+      POSTGRES_HOST: pg-server-service
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: servers
+
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_CONSUMER_TOPIC: health_checks_events
+      KAFKA_CONSUMER_GROUP_ID: health-checks-consumers
+      KAFKA_CONSUMER_CNT: 3
+    volumes:
+      - app-logs:/app/log
+    depends_on:
+      init-services:
+        condition: service_completed_successfully
+
+volumes:
+  app-logs:
