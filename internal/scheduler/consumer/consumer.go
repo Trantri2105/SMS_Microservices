@@ -78,7 +78,7 @@ func (s *serverConsumer) Start() {
 					Port:                event.Payload.After.Port,
 					HealthEndpoint:      event.Payload.After.HealthEndpoint,
 					HealthCheckInterval: event.Payload.After.HealthCheckInterval,
-					NextHealthCheckAt:   time.Now().Add(time.Duration(event.Payload.After.HealthCheckInterval) * time.Second),
+					NextHealthCheckAt:   time.Now().Add(1 * time.Second),
 				})
 				if err != nil {
 					cancel()

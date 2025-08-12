@@ -13,8 +13,8 @@ func NewKafkaWriter(brokers []string, topic string) *kafka.Writer {
 
 func NewKafkaReader(brokers []string, consumerGroupID string, topic string) *kafka.Reader {
 	return kafka.NewReader(kafka.ReaderConfig{
-		Brokers: brokers,
-		GroupID: consumerGroupID,
-		Topic:   topic,
+		Brokers:     brokers,
+		GroupID:     consumerGroupID,
+		Topic:       topic,
 	})
 }

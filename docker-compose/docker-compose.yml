@@ -79,8 +79,6 @@ services:
 
   pg-server-service:
     image: postgres:17.4
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: 123456
@@ -94,8 +92,6 @@ services:
 
   pg-scheduler:
     image: postgres:17.4
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: 123456
@@ -202,7 +198,7 @@ services:
       REQUEST_TIMEOUT: 1s
 
       KAFKA_BROKERS: kafka:9092
-      KAFKA_CONSUMER_TOPIC: server-checks-events
+      KAFKA_CONSUMER_TOPIC: server_checks_events
       KAFKA_PRODUCER_TOPIC: health_checks_events
       KAFKA_CONSUMER_GROUP_ID: health-checkers-consumers
       KAFKA_CONSUMER_CNT: 3

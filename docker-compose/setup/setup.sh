@@ -10,6 +10,13 @@ kafka-topics \
 kafka-topics \
   --bootstrap-server kafka:9092 \
   --create \
+  --topic server-svc.public.servers \
+  --partitions 3 \
+  --replication-factor 1
+
+kafka-topics \
+  --bootstrap-server kafka:9092 \
+  --create \
   --topic server_checks_events \
   --partitions 3 \
   --replication-factor 1

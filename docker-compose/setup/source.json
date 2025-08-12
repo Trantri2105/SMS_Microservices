@@ -14,8 +14,6 @@
      "table.include.list": "public.servers",
      "topic.prefix": "server-svc",
      "column.include.list": "public.servers.id,public.servers.ipv4,public.servers.port,public.servers.health_check_interval,public.servers.health_endpoint",
-     "skip.messages.without.change": true,
-     "topic.creation.default.partitions": 3,
-     "topic.creation.default.replication.factor": 1
+     "skip.messages.without.change": true
     }
 }
