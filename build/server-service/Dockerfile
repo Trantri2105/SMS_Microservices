@@ -7,7 +7,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/server-service ./cmd/server-servic
 
 FROM ubuntu:latest
 
-RUN apt-get update && apt-get install -y dos2unix \
+RUN apt-get update && apt-get install -y \
     logrotate \
     cron \
     ca-certificates \
@@ -15,7 +15,6 @@ RUN apt-get update && apt-get install -y dos2unix \
 
 COPY ./build/server-service/server-logrotate /etc/logrotate.d/
 
-RUN dos2unix /etc/logrotate.d/server-logrotate
 RUN chmod 0644 /etc/logrotate.d/
 
 WORKDIR /app

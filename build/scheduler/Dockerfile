@@ -7,7 +7,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/scheduler ./cmd/scheduler/
 
 FROM ubuntu:latest
 
-RUN apt-get update && apt-get install -y dos2unix \
+RUN apt-get update && apt-get install -y \
     logrotate \
     cron \
     ca-certificates \
@@ -15,7 +15,6 @@ RUN apt-get update && apt-get install -y dos2unix \
 
 COPY ./build/scheduler/scheduler-logrotate /etc/logrotate.d/
 
-RUN dos2unix /etc/logrotate.d/scheduler-logrotate
 RUN chmod 0644 /etc/logrotate.d/
 
 WORKDIR /app

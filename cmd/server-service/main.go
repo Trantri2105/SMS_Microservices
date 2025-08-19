@@ -33,7 +33,7 @@ func main() {
 
 	// set up logger
 	fileSyncer, err := logger.NewReopenableWriteSyncer("./log/server-service.log")
-	zapLogger := logger.NewLogger(appConfig.Server.LogLevel, fileSyncer)
+	zapLogger := logger.NewLogger(appConfig.Server.LogLevel, fileSyncer).With(zap.String("service.name", "server-service"))
 	defer zapLogger.Sync()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP)

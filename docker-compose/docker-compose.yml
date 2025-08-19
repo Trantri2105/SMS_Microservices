@@ -231,5 +231,18 @@ services:
       init-services:
         condition: service_completed_successfully
 
+  filebeat:
+    image: elastic/filebeat:9.0.0
+    user: root
+    command: >
+      sh -c "
+        chown root:root /usr/share/filebeat/filebeat.yml;
+        chmod go-w /usr/share/filebeat/filebeat.yml;
+        /usr/local/bin/docker-entrypoint -e;
+      "
+    volumes:
+      - app-logs:/var/log/app
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+
 volumes:
   app-logs:

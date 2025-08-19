@@ -22,7 +22,7 @@ func main() {
 
 	// set up logger
 	fileSyncer, err := logger.NewReopenableWriteSyncer("./log/health-check-consumer.log")
-	zapLogger := logger.NewLogger(appConfig.Server.LogLevel, fileSyncer)
+	zapLogger := logger.NewLogger(appConfig.Server.LogLevel, fileSyncer).With(zap.String("service.name", "health-check-consumer"))
 	defer zapLogger.Sync()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP)
