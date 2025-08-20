@@ -1,10 +1,11 @@
 package middleware
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"slices"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 type AuthMiddleware interface {

@@ -405,6 +405,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
+  /scopes:
+    get:
+      summary: Get list of scopes
+      tags:
+        - "Scopes"
+      security:
+        - bearerAuth: [ "scope:read" ]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        200:
+          description: Successfully retrieved server list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+
 components:
   securitySchemes:
     BearerAuth:
