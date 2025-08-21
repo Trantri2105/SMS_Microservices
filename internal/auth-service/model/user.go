@@ -8,7 +8,7 @@ type User struct {
 	Password  string
 	FirstName string
 	LastName  string
-	Role      []Role `gorm:"many2many:role_users;"`
+	Roles     []Role `gorm:"many2many:roles_users;"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
