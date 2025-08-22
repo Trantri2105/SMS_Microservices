@@ -15,7 +15,8 @@ type UserRepository interface {
 	CreateUser(ctx context.Context, user model.User) (model.User, error)
 	GetUserByEmail(ctx context.Context, email string) (model.User, error)
 	UpdateUserByID(ctx context.Context, user model.User) error
-	GetUsers(ctx context.Context, userEmail string, sortBy string, sortOrder string, limit, offset int) ([]model.User, error)
+	// GetUsers sort users by CreatedAt
+	GetUsers(ctx context.Context, userEmail string, sortOrder string, limit, offset int) ([]model.User, error)
 	GetUserByID(ctx context.Context, id string) (model.User, error)
 }
 
@@ -75,13 +76,13 @@ func (u *userRepository) UpdateUserByID(ctx context.Context, user model.User) er
 	return nil
 }
 
-func (u *userRepository) GetUsers(ctx context.Context, userEmail string, sortBy string, sortOrder string, limit, offset int) ([]model.User, error) {
+func (u *userRepository) GetUsers(ctx context.Context, userEmail string, sortOrder string, limit, offset int) ([]model.User, error) {
 	query := u.db.WithContext(ctx)
 	if userEmail != "" {
 		query = query.Where("email LIKE ?", userEmail+"%")
 	}
 	var users []model.User
-	err := query.Order(fmt.Sprintf("%s %s", sortBy, sortOrder)).Limit(limit).Offset(offset).Find(&users).Error
+	err := query.Order(fmt.Sprintf("%s %s", "created_at", sortOrder)).Limit(limit).Offset(offset).Find(&users).Error
 	if err != nil {
 		return nil, fmt.Errorf("userRepository.GetUsersList: %w", err)
 	}

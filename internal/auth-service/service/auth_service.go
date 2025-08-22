@@ -29,7 +29,6 @@ type AuthService interface {
 	Login(ctx context.Context, email, password string) (AuthenticationResponse, error)
 	Logout(ctx context.Context, userID string) error
 	Refresh(ctx context.Context, refreshToken string) (AuthenticationResponse, error)
-	VerifyToken(ctx context.Context, token string) (AuthUserInfo, error)
 }
 
 type authService struct {
@@ -144,11 +143,6 @@ func (a *authService) Refresh(ctx context.Context, refreshToken string) (Authent
 		AccessTokenTTL:  accessToken.TTL,
 		RefreshTokenTTL: newRefreshToken.TTL,
 	}, nil
-}
-
-func (a *authService) VerifyToken(ctx context.Context, token string) (AuthUserInfo, error) {
-	//TODO implement me
-	panic("implement me")
 }
 
 func NewAuthService(userService UserService, jwt jwt.Utils, tokenRepo repository.RefreshTokenRepository, userSessionTTL time.Duration) AuthService {

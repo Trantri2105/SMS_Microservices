@@ -16,7 +16,8 @@ type UserService interface {
 	GetUserById(ctx context.Context, id string) (model.User, error)
 	UpdateUserByID(ctx context.Context, user model.User) error
 	UpdateUserPassword(ctx context.Context, id string, currentPassword string, newPassword string) error
-	GetUsers(ctx context.Context, userEmail string, sortBy string, sortOrder string, limit, offset int) ([]model.User, error)
+	// GetUsers will sort user by CreatedAt
+	GetUsers(ctx context.Context, userEmail string, sortOrder string, limit, offset int) ([]model.User, error)
 }
 
 type userService struct {
@@ -24,8 +25,8 @@ type userService struct {
 	roleRepo repository.RoleRepository
 }
 
-func (u *userService) GetUsers(ctx context.Context, userEmail string, sortBy string, sortOrder string, limit, offset int) ([]model.User, error) {
-	users, err := u.userRepo.GetUsers(ctx, userEmail, sortBy, sortOrder, limit, offset)
+func (u *userService) GetUsers(ctx context.Context, userEmail string, sortOrder string, limit, offset int) ([]model.User, error) {
+	users, err := u.userRepo.GetUsers(ctx, userEmail, sortOrder, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +52,11 @@ func (u *userService) CreateUser(ctx context.Context, user model.User) (model.Us
 		}
 		user.Roles = roles
 	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return model.User{}, fmt.Errorf("UserService.Register hashing password err: %w", err)
+	}
+	user.Password = string(hash)
 	createdUser, err := u.userRepo.CreateUser(ctx, user)
 	if err != nil {
 		return model.User{}, fmt.Errorf("userService.CreateUser: %w", err)
