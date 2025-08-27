@@ -21,8 +21,8 @@ type UserService interface {
 }
 
 type userService struct {
-	userRepo repository.UserRepository
-	roleRepo repository.RoleRepository
+	userRepo    repository.UserRepository
+	roleService RoleService
 }
 
 func (u *userService) GetUsers(ctx context.Context, userEmail string, sortOrder string, limit, offset int) ([]model.User, error) {
@@ -43,7 +43,7 @@ func (u *userService) CreateUser(ctx context.Context, user model.User) (model.Us
 		for roleID := range roleMap {
 			roleIDs = append(roleIDs, roleID)
 		}
-		roles, err := u.roleRepo.GetRolesListByIDs(ctx, roleIDs)
+		roles, err := u.roleService.GetRolesByIDs(ctx, roleIDs)
 		if err != nil {
 			return model.User{}, fmt.Errorf("userRepository.GetRolesListByIDs: %w", err)
 		}
@@ -90,7 +90,7 @@ func (u *userService) UpdateUserByID(ctx context.Context, user model.User) error
 		for roleID := range roleMap {
 			roleIDs = append(roleIDs, roleID)
 		}
-		roles, err := u.roleRepo.GetRolesListByIDs(ctx, roleIDs)
+		roles, err := u.roleService.GetRolesByIDs(ctx, roleIDs)
 		if err != nil {
 			return fmt.Errorf("userRepository.GetRolesListByIDs: %w", err)
 		}
@@ -127,9 +127,9 @@ func (u *userService) UpdateUserPassword(ctx context.Context, id string, current
 	return nil
 }
 
-func NewUserService(userRepo repository.UserRepository, roleRepo repository.RoleRepository) UserService {
+func NewUserService(userRepo repository.UserRepository, roleService RoleService) UserService {
 	return &userService{
-		userRepo: userRepo,
-		roleRepo: roleRepo,
+		userRepo:    userRepo,
+		roleService: roleService,
 	}
 }

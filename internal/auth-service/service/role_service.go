@@ -14,11 +14,20 @@ type RoleService interface {
 	DeleteRoleByID(ctx context.Context, id string) error
 	GetRoles(ctx context.Context, roleName string, sortBy string, sortOrder string, limit int, offset int) ([]model.Role, error)
 	GetRoleByID(ctx context.Context, id string) (model.Role, error)
+	GetRolesByIDs(ctx context.Context, ids []string) ([]model.Role, error)
 }
 
 type roleService struct {
-	roleRepo  repository.RoleRepository
-	scopeRepo repository.ScopeRepository
+	roleRepo     repository.RoleRepository
+	scopeService ScopeService
+}
+
+func (r *roleService) GetRolesByIDs(ctx context.Context, ids []string) ([]model.Role, error) {
+	roles, err := r.roleRepo.GetRolesListByIDs(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("roleSerivce.GetRolesByIDs: %w", err)
+	}
+	return roles, nil
 }
 
 func (r *roleService) validateScopes(ctx context.Context, scopes []model.Scope) ([]model.Scope, error) {
@@ -30,7 +39,7 @@ func (r *roleService) validateScopes(ctx context.Context, scopes []model.Scope) 
 	for scopeID := range scopeMap {
 		scopeIDs = append(scopeIDs, scopeID)
 	}
-	scopes, err := r.scopeRepo.GetScopesListByIDs(ctx, scopeIDs)
+	scopes, err := r.scopeService.GetScopesByIDs(ctx, scopeIDs)
 	if err != nil {
 		return nil, fmt.Errorf("roleRepository.GetScopesListByIDs: %w", err)
 	}
@@ -94,9 +103,9 @@ func (r *roleService) GetRoleByID(ctx context.Context, id string) (model.Role, e
 	return role, nil
 }
 
-func NewRoleService(roleRepo repository.RoleRepository, scopeRepo repository.ScopeRepository) RoleService {
+func NewRoleService(roleRepo repository.RoleRepository, scopeService ScopeService) RoleService {
 	return &roleService{
-		roleRepo:  roleRepo,
-		scopeRepo: scopeRepo,
+		roleRepo:     roleRepo,
+		scopeService: scopeService,
 	}
 }

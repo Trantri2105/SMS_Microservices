@@ -220,8 +220,9 @@ func (a *authHandler) VerifyToken() gin.HandlerFunc {
 	}
 }
 
-func NewAuthHandler(authService service.AuthService) AuthHandler {
+func NewAuthHandler(authService service.AuthService, logger Logger) AuthHandler {
 	return &authHandler{
 		authService: authService,
+		logger:      logger,
 	}
 }
