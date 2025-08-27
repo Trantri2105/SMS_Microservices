@@ -63,6 +63,14 @@ services:
     environment:
       - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
 
+  redis:
+    image: redis:latest
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli ping | grep PONG" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   init-services:
     image: confluentinc/cp-kafka:7.2.15
     container_name: init-services
@@ -103,7 +111,7 @@ services:
     volumes:
       - ./init_scheduler.sql:/docker-entrypoint-initdb.d/init.sql
 
-  pg-auth:
+  pg-auth-service:
     image: postgres:17.4
     environment:
       POSTGRES_USER: admin
@@ -148,31 +156,34 @@ services:
   auth-service:
     build:
       context: ../
-      dockerfile: ./build/server-service/Dockerfile
+      dockerfile: ./build/auth-service/Dockerfile
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
-      POSTGRES_HOST: pg-server-service
+      POSTGRES_HOST: pg-auth-service
       POSTGRES_PORT: 5432
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: 123456
-      POSTGRES_DB: servers
+      POSTGRES_DB: auth
 
-      ELASTICSEARCH_ADDRESSES: http://es:9200
-
-      SERVER_PORT: 8080
+      SERVER_PORT: 8081
       LOG_LEVEL: info
+      USER_SESSION_TTL: 720h
 
-      MAIL_EMAIL: tringuyenhn03@gmail.com
-      MAIL_PASSWORD: zxda bgjn aqhb yppb
-      MAIL_HOST: smtp.gmail.com
-      MAIL_PORT: 587
-      MAIL_ADMIN_EMAIL: tringuyenhn03@gmail.com
+      JWT_SECRET_KEY: supersecretkey1233456
+      JWT_ACCESS_TOKEN_TTL: 15m
+      JWT_REFRESH_TOKEN_TTL: 168h
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
     volumes:
       - app-logs:/app/log
     depends_on:
-      init-services:
-        condition: service_completed_successfully
+      pg-auth-service:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   server-service:
     build:
