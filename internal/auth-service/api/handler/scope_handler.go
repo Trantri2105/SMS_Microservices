@@ -68,9 +68,9 @@ func (s *scopeHandler) GetScopes() gin.HandlerFunc {
 			})
 			return
 		}
-		scopesRes := make([]response.ScopeResponse, len(scopes))
+		scopesRes := make([]response.ScopeInfoResponse, len(scopes))
 		for i, scope := range scopes {
-			scopesRes[i] = response.ScopeResponse{
+			scopesRes[i] = response.ScopeInfoResponse{
 				ID:          scope.ID,
 				Name:        scope.Name,
 				Description: scope.Description,

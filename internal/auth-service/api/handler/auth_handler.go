@@ -126,7 +126,7 @@ func (a *authHandler) Login() gin.HandlerFunc {
 					Message: "User not found",
 				})
 			case errors.Is(err, apperrors.ErrInvalidPassword):
-				c.JSON(http.StatusUnauthorized, response.Response{
+				c.JSON(http.StatusBadRequest, response.Response{
 					Message: "Invalid password",
 				})
 			default:
@@ -213,8 +213,12 @@ func (a *authHandler) VerifyToken() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claims := c.Value(middleware.JWTClaimsContextKey).(jwt.MapClaims)
 		userID := claims["user_id"].(string)
-		scopes := claims["scopes"].([]string)
-		c.Header("X-User-ID", userID)
+		scopesList := claims["scopes"].([]interface{})
+		scopes := make([]string, len(scopesList))
+		for i, scope := range scopesList {
+			scopes[i] = scope.(string)
+		}
+		c.Header("X-User-Id", userID)
 		c.Header("X-User-Scopes", strings.Join(scopes, ","))
 		c.Status(http.StatusNoContent)
 	}

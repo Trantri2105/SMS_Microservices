@@ -50,7 +50,11 @@ func (a *authMiddleware) ValidateAndExtractJwt() gin.HandlerFunc {
 func (a *authMiddleware) CheckUserPermission(requiredScope string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claims := c.Value(JWTClaimsContextKey).(jwt2.MapClaims)
-		scopes := claims["scopes"].([]string)
+		scopesList := claims["scopes"].([]interface{})
+		scopes := make([]string, len(scopesList))
+		for i, scope := range scopesList {
+			scopes[i] = scope.(string)
+		}
 		if !slices.Contains(scopes, requiredScope) {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response.Response{Message: "Permission denied"})
 			return

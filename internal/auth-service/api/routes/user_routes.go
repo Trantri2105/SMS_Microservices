@@ -9,7 +9,6 @@ import (
 
 var (
 	ScopeUserRead        = "users:read"
-	ScopeUserCreate      = "users:create"
 	ScopeUserRolesUpdate = "users:roles:update"
 )
 

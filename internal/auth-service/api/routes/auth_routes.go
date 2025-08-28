@@ -8,12 +8,12 @@ import (
 )
 
 var (
-	ScopeUsersCreate = "users:create"
+	ScopeUserCreate = "users:create"
 )
 
 func SetUpAuthRoutes(r *gin.Engine, handler handler.AuthHandler, m middleware.AuthMiddleware) {
 	authRoutes := r.Group("/auth")
-	authRoutes.POST("/register", m.ValidateAndExtractJwt(), m.CheckUserPermission(ScopeUsersCreate), handler.Register())
+	authRoutes.POST("/register", m.ValidateAndExtractJwt(), m.CheckUserPermission(ScopeUserCreate), handler.Register())
 	authRoutes.POST("/login", handler.Login())
 	authRoutes.POST("/logout", m.ValidateAndExtractJwt(), handler.Logout())
 	authRoutes.POST("/refresh", handler.Refresh())

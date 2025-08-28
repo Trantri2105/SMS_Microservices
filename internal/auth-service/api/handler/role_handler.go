@@ -54,8 +54,8 @@ func (r *roleHandler) CreateRole() gin.HandlerFunc {
 			}
 			return
 		}
-		scopes := make([]model.Scope, len(req.Scopes))
-		for i, scope := range req.Scopes {
+		scopes := make([]model.Scope, len(req.ScopeIDs))
+		for i, scope := range req.ScopeIDs {
 			scopes[i] = model.Scope{
 				Name: scope,
 			}
@@ -118,8 +118,8 @@ func (r *roleHandler) UpdateRole() gin.HandlerFunc {
 			return
 		}
 		id := c.Param("id")
-		scopes := make([]model.Scope, len(req.Scopes))
-		for i, scope := range req.Scopes {
+		scopes := make([]model.Scope, len(req.ScopeIDs))
+		for i, scope := range req.ScopeIDs {
 			scopes[i] = model.Scope{
 				Name: scope,
 			}
@@ -136,6 +136,10 @@ func (r *roleHandler) UpdateRole() gin.HandlerFunc {
 			case errors.Is(err, apperrors.ErrInvalidScopes):
 				c.JSON(http.StatusBadRequest, response.Response{
 					Message: "Invalid scopes",
+				})
+			case errors.Is(err, apperrors.ErrRoleNotFound):
+				c.JSON(http.StatusNotFound, response.Response{
+					Message: "Role not found",
 				})
 			case errors.Is(err, apperrors.ErrRoleNameAlreadyExists):
 				c.JSON(http.StatusBadRequest, response.Response{

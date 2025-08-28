@@ -38,3 +38,36 @@ CREATE TABLE user_roles (
     role_id UUID REFERENCES roles(id) ON DELETE CASCADE,
     PRIMARY KEY (user_id, role_id)
 );
+
+INSERT INTO scopes (name, description, created_at, updated_at) VALUES
+('users:create', 'Allow creating users', NOW(), NOW()),
+('users:read', 'Allow reading user information', NOW(), NOW()),
+('users:roles:update', 'Allow updating user roles', NOW(), NOW()),
+('roles:create', 'Allow creating roles', NOW(), NOW()),
+('roles:read', 'Allow reading role information', NOW(), NOW()),
+('roles:update', 'Allow updating roles', NOW(), NOW()),
+('roles:delete', 'Allow deleting roles', NOW(), NOW()),
+('scopes:read', 'Allow reading scope information', NOW(), NOW()),
+('servers:read', 'Allow reading server information', NOW(), NOW()),
+('servers:create', 'Allow creating servers', NOW(), NOW()),
+('servers:update', 'Allow updating servers', NOW(), NOW()),
+('servers:delete', 'Allow deleting servers', NOW(), NOW());
+
+
+INSERT INTO roles (name, description, created_at, updated_at)
+VALUES ('admin', 'Administrator with all permissions', NOW(), NOW());
+
+INSERT INTO role_scopes (role_id, scope_id)
+SELECT
+    (SELECT id FROM roles WHERE name = 'admin'),
+    id
+FROM scopes;
+
+INSERT INTO users (email, password, first_name, last_name, created_at, updated_at)
+VALUES ('admin@gmail.com', '$2a$04$CHxMEXL8vezb4FCk9BoHMu4isGPn.6Md.8GQfbwyGDF5UESazaPKq', 'admin', 'admin', NOW(), NOW());
+
+INSERT INTO user_roles (user_id, role_id) VALUES
+(
+    (SELECT id FROM users WHERE email = 'admin@gmail.com'),
+    (SELECT id FROM roles WHERE name = 'admin')
+);

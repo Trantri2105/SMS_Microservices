@@ -1,0 +1,1427 @@
+openapi: 3.1.0
+
+info:
+  title: Server Management API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+
+tags:
+  - name: Auth
+    description: Authentication and authorization
+  - name: Users
+    description: Users management operations
+  - name: Scopes
+    description: Scopes management operations
+  - name: Roles
+    description: Roles management operations
+  - name: Servers
+    description: Servers management operations
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      security:
+        - BearerAuth: [ 'users:create' ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        200:
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfoResponse'
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        409:
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login
+      security: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        200:
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationResponse'
+          headers:
+            Set-Cookie:
+              description: Http only cookies contains refresh token
+              schema:
+                type: string
+        404:
+          description: User not found (wrong email)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        400:
+          description: Invalid input format (malformed request body) or invalid password
+          content:
+            application/json:
+                schema:
+                  $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /auth/logout:
+    post:
+      summary: Logout current sessions
+      tags:
+        - Auth
+      security:
+        - BearerAuth: [ ]
+      responses:
+        200:
+          description: Logout successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+          headers:
+            Set-Cookie:
+              description: Server send this cookies to remove current cookies.
+              schema:
+                type: string
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: "Refresh Access Token"
+      security: [ ]
+      responses:
+        200:
+          description: Access token refresh
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationResponse'
+          headers:
+            Set-Cookie:
+              description: Http only cookies contains refresh token
+              schema:
+                type: string
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /auth/verify:
+    get:
+      tags:
+        - Auth
+      security:
+        - BearerAuth: [ ]
+      responses:
+        204:
+          description: Valid access token
+          headers:
+            X-User-Id:
+              schema:
+                type: string
+            X-User-Scopes:
+              schema:
+                type: string
+        401:
+          description: Invalid access token (unauthorized)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /roles:
+    post:
+      tags:
+        - Roles
+      security:
+        - BearerAuth: [ "roles:create" ]
+      summary: "Create new role"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoleRequest'
+      responses:
+        201:
+          description: Role created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleInfoResponse'
+        400:
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+    get:
+      tags:
+        - Roles
+      security:
+        - BearerAuth: [ "roles:read" ]
+      summary: Get role list
+      parameters:
+        - name: role_name
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ name, created_at ]
+            default: created_at
+        - name: sort_order
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum: [ asc, desc ]
+            default: asc
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  schema:
+                    $ref: '#/components/schemas/RoleInfoResponse'
+        400:
+          description: Invalid parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /roles/{id}:
+    get:
+      tags:
+        - Roles
+      summary: Get role info by id
+      security:
+        - BearerAuth: [ "roles:read" ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleInfoResponse'
+        404:
+          description: Role not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+    patch:
+      tags:
+        - Roles
+      summary: Update role by id
+      security:
+        - BearerAuth: [ "roles:update" ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRoleRequest'
+      responses:
+        200:
+          description: Role updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        400:
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        404:
+          description: Role not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+    delete:
+      tags:
+        - Roles
+      summary: Delete role by id
+      security:
+        - BearerAuth: [ "roles:delete" ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Role deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /scopes:
+    get:
+      tags:
+        - Scopes
+      security:
+        - BearerAuth: [ "scopes:read" ]
+      summary: Get scope list
+      parameters:
+        - name: scope_name
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ name, created_at ]
+            default: created_at
+        - name: sort_order
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum: [ asc, desc ]
+            default: asc
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  schema:
+                    $ref: '#/components/schemas/ScopeInfoResponse'
+        400:
+          description: Invalid parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /users:
+    get:
+      tags:
+        - Users
+      security:
+        - BearerAuth: [ "users:read" ]
+      summary: Get users list, users will be sorted by created_at
+      parameters:
+        - name: email
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: sort_order
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum: [ asc, desc ]
+            default: asc
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  schema:
+                    $ref: '#/components/schemas/UserInfoResponse'
+        400:
+          description: Invalid parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Get user info by id
+      security:
+        - BearerAuth: [ "users:read" ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfoResponse'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /users/{id}/roles:
+    put:
+      tags:
+        - Users
+      summary: Update user role
+      security:
+        - BearerAuth: [ "users:roles:update" ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRoleRequest'
+      responses:
+        200:
+          description: User roles updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        400:
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: Get user info by id
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfoResponse'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+    patch:
+      tags:
+        - Users
+      summary: Update user info
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserInfoRequest'
+      responses:
+        200:
+          description: User info updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        409:
+          description: User mail already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        400:
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /users/me/password:
+    put:
+      tags:
+        - Users
+      summary: Update user password
+      security:
+        - BearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePasswordRequest'
+      responses:
+        200:
+          description: User password updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        400:
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /servers:
+    post:
+      summary: Create a new server
+      tags:
+        - Servers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServerRequest'
+              required:
+                - server_name
+                - ipv4
+                - port
+                - health_endpoint
+                - health_check_interval
+      responses:
+        201:
+          description: Server created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerInfoResponse'
+        400:
+          description: Invalid input format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        409:
+          description: Server name already exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+    get:
+      summary: List all servers with filter and pagination. The servers will be sorted by created time.
+      tags:
+        - Servers
+      parameters:
+        - name: server_name
+          in: query
+          description: Server name
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: status
+          in: query
+          description: Filter by server status
+          required: false
+          schema:
+            type: string
+            enum: [ pending, healthy, unhealthy, inactive, configuration_error, network_error ]
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ server_name, created_at ]
+            default: created_at
+        - name: sort_order
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum: [ asc, desc ]
+            default: asc
+      responses:
+        200:
+          description: Successfully retrieved server list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerListResponse'
+        400:
+          description: Invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerListResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+
+  /servers/{serverId}:
+    patch:
+      summary: Update server information
+      tags:
+        - Servers
+      parameters:
+        - name: serverId
+          in: path
+          required: true
+          description: ID of the server to update
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServerRequest'
+      responses:
+        200:
+          description: Server updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerInfoResponse'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        404:
+          description: Server not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+    delete:
+      summary: Delete a server by id
+      tags:
+        - Servers
+      parameters:
+        - name: serverId
+          in: path
+          required: true
+          description: ID of the server to delete
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Server deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /servers/import:
+    post:
+      summary: 'Import servers from Excel file. Imported sheet must have these column: server_name, ipv4, port, health_endpoint, health_check_interval. Imported sheet must have header row to specified order of columns.'
+      tags:
+        - Servers
+      parameters:
+        - name: sheet_name
+          in: query
+          description: Name of the sheet to import server, if not specified, the first sheet will be used
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Excel file containing server data
+                  required: true
+      responses:
+        200:
+          description: Server imported successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportServerResponse'
+        400:
+          description: Invalid file format or data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /servers/export:
+    get:
+      summary: Export servers to Excel file
+      tags:
+        - Servers
+      parameters:
+        - name: server_name
+          in: query
+          description: Server name
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: status
+          in: query
+          description: Filter by server status
+          required: false
+          schema:
+            type: string
+            enum: [ pending, healthy, unhealthy, inactive, configuration_error, network_error ]
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ server_name, created_at ]
+            default: created_at
+        - name: sort_order
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum: [ asc, desc ]
+            default: asc
+      responses:
+        200:
+          description: Servers exported successfully
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        400:
+          description: Invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /servers/reports:
+    post:
+      summary: Generate and send a server report via email
+      tags:
+        - Servers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+      responses:
+        200:
+          description: email sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        400:
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /servers/{serverId}/uptime:
+    get:
+      tags:
+        - Servers
+      summary: Get server uptime percentage
+      parameters:
+        - name: serverId
+          in: path
+          required: true
+          description: ID of the server to update
+          schema:
+            type: string
+            format: uuid
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "2025-01-31"
+      responses:
+        200:
+          description: Get server uptime successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uptime_percentage: number
+                  format: double
+        400:
+          description: Invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Response:
+      type: object
+      properties:
+        message:
+          type: string
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          required: true
+        password:
+          type: string
+          format: password
+          required: true
+        first_name:
+          type: string
+          required: true
+        last_name:
+          type: string
+          required: true
+        role_ids:
+          type: array
+          items:
+            type: string
+    ScopeInfoResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+    RoleInfoResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        scopes:
+          type: array
+          items:
+            schema:
+              $ref: '#/components/schemas/ScopeInfoResponse'
+    UserInfoResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        roles:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+        scopes:
+          type: array
+          items:
+            schema:
+              $ref: '#/components/schemas/ScopeInfoResponse'
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          required: true
+        password:
+          type: string
+          required: true
+    CreateRoleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          required: true
+        description:
+          type: string
+          required: true
+        scope_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    UpdateRoleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        scope_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    UpdateUserInfoRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+    UpdatePasswordRequest:
+      type: object
+      properties:
+        current_password:
+          type: string
+          required: true
+        new_password:
+          type: string
+          required: true
+    UpdateUserRoleRequest:
+      type: array
+      properties:
+        role_ids:
+          type: array
+          items:
+            type: string
+          required: true
+    AuthenticationResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: integer
+    ServerRequest:
+      type: object
+      properties:
+        server_name:
+          type: string
+        ipv4:
+          type: string
+          format: ipv4
+        port:
+          type: integer
+        health_endpoint:
+          type: string
+        health_check_interval:
+          description: health check interval in seconds (must be less than or equal to 3600 (1 hour))
+          type: integer
+    ServerInfoResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        server_name:
+          type: string
+        status:
+          type: string
+          enum: [ pending, healthy, unhealthy, inactive, configuration_error, network_error ]
+        ipv4:
+          type: string
+        port:
+          type: integer
+        health_endpoint:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        health_check_interval:
+          description: health check interval in seconds (must be less than or equal to 3600 (1 hour))
+          type: integer
+    ImportServerResponse:
+      type: object
+      properties:
+        imported_count:
+          type: integer
+          description: Number of servers successfully imported
+        imported_servers:
+          type: array
+          description: List of successfully imported servers id
+          items:
+            type: string
+        failed_count:
+          type: integer
+          description: Number of servers that failed to import
+        failed_servers:
+          type: array
+          description: List of servers id that failed to import
+          items:
+            type: string
+    ServerListResponse:
+      type: object
+      properties:
+        servers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServerInfoResponse'
+    ReportRequest:
+      type: object
+      properties:
+        start_date:
+          type: string
+          format: date
+          description: The start date for the report period (inclusive), in YYYY-MM-DD format.
+          example: "2025-01-01"
+          required: true
+        end_date:
+          type: string
+          format: date
+          description: The end date for the report period (inclusive), in YYYY-MM-DD format.
+          example: "2025-01-31"
+          required: true
+        email:
+          type: string
+          format: email
+          description: The email address to which the report should be sent.
+          example: "recipient@example.com"
+          required: true
+
+security:
+  - BearerAuth: []

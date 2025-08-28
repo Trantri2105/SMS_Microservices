@@ -17,7 +17,7 @@ var (
 func SetUpRoleRoutes(r *gin.Engine, h handler.RoleHandler, m middleware.AuthMiddleware) {
 	roleRoutes := r.Group("/roles")
 	roleRoutes.POST("", m.ValidateAndExtractJwt(), m.CheckUserPermission(ScopeRoleCreate), h.CreateRole())
-	roleRoutes.PUT("", m.ValidateAndExtractJwt(), m.CheckUserPermission(ScopeRoleUpdate), h.UpdateRole())
+	roleRoutes.PATCH("/:id", m.ValidateAndExtractJwt(), m.CheckUserPermission(ScopeRoleUpdate), h.UpdateRole())
 	roleRoutes.DELETE("/:id", m.ValidateAndExtractJwt(), m.CheckUserPermission(ScopeRoleDelete), h.DeleteRole())
 	roleRoutes.GET("", m.ValidateAndExtractJwt(), m.CheckUserPermission(ScopeRoleRead), h.GetRoles())
 	roleRoutes.GET("/:id", m.ValidateAndExtractJwt(), m.CheckUserPermission(ScopeRoleRead), h.GetRoleByID())
