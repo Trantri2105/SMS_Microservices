@@ -57,7 +57,7 @@ func (r *roleHandler) CreateRole() gin.HandlerFunc {
 		scopes := make([]model.Scope, len(req.ScopeIDs))
 		for i, scope := range req.ScopeIDs {
 			scopes[i] = model.Scope{
-				Name: scope,
+				ID: scope,
 			}
 		}
 		newRole := model.Role{
