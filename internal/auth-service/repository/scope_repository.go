@@ -32,7 +32,7 @@ func (s *scopeRepository) GetScopes(ctx context.Context, scopeName string, sortB
 		query = query.Where("name LIKE ?", scopeName+"%")
 	}
 	var scopes []model.Scope
-	err := s.db.WithContext(ctx).Order(fmt.Sprintf("% %", sortBy, sortOrder)).Limit(limit).Offset(offset).Find(&scopes).Error
+	err := s.db.WithContext(ctx).Order(fmt.Sprintf("%s %s", sortBy, sortOrder)).Limit(limit).Offset(offset).Find(&scopes).Error
 	if err != nil {
 		return nil, fmt.Errorf("scopeRepository.GetScopes: %w", err)
 	}
