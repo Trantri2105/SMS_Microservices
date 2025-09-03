@@ -88,8 +88,9 @@ func (r *roleHandler) CreateRole() gin.HandlerFunc {
 		scopeRes := make([]response.ScopeInfoResponse, len(res.Scopes))
 		for i, scope := range res.Scopes {
 			scopeRes[i] = response.ScopeInfoResponse{
-				Name: scope.Name,
-				ID:   scope.ID,
+				Name:        scope.Name,
+				ID:          scope.ID,
+				Description: scope.Description,
 			}
 		}
 		c.JSON(http.StatusCreated, response.RoleInfoResponse{
@@ -119,9 +120,9 @@ func (r *roleHandler) UpdateRole() gin.HandlerFunc {
 		}
 		id := c.Param("id")
 		scopes := make([]model.Scope, len(req.ScopeIDs))
-		for i, scope := range req.ScopeIDs {
+		for i, scopeID := range req.ScopeIDs {
 			scopes[i] = model.Scope{
-				Name: scope,
+				ID: scopeID,
 			}
 		}
 		updatedData := model.Role{

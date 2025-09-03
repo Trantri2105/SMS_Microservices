@@ -5,5 +5,5 @@ type RegisterRequest struct {
 	Password  string   `json:"password" binding:"required"`
 	FirstName string   `json:"first_name" binding:"required"`
 	LastName  string   `json:"last_name" binding:"required"`
-	RoleIDs   []string `json:"roles"`
+	RoleIDs   []string `json:"role_ids" binding:"omitempty,dive,uuid"`
 }

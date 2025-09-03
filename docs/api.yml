@@ -5,7 +5,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: http://192.168.159.131:8081
+  - url: http://localhost:8081
     description: Development server
 
 tags:
@@ -192,6 +192,12 @@ paths:
                 type: string
         401:
           description: Invalid access token (unauthorized)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        500:
+          description: Internal server error
           content:
             application/json:
               schema:
@@ -1318,7 +1324,7 @@ components:
           type: string
           required: true
     UpdateUserRoleRequest:
-      type: array
+      type: object
       properties:
         role_ids:
           type: array

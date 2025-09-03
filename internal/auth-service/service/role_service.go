@@ -39,14 +39,14 @@ func (r *roleService) validateScopes(ctx context.Context, scopes []model.Scope) 
 	for scopeID := range scopeMap {
 		scopeIDs = append(scopeIDs, scopeID)
 	}
-	scopes, err := r.scopeService.GetScopesByIDs(ctx, scopeIDs)
+	scopeInfos, err := r.scopeService.GetScopesByIDs(ctx, scopeIDs)
 	if err != nil {
 		return nil, fmt.Errorf("roleRepository.GetScopesListByIDs: %w", err)
 	}
-	if len(scopes) != len(scopeIDs) {
+	if len(scopeInfos) != len(scopeIDs) {
 		return nil, fmt.Errorf("roleRepository.GetScopesListByIDs: %w", apperrors.ErrInvalidScopes)
 	}
-	return nil, nil
+	return scopeInfos, nil
 }
 
 func (r *roleService) CreateRole(ctx context.Context, role model.Role) (model.Role, error) {

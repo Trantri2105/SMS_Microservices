@@ -37,6 +37,8 @@ func (*authHandler) formatValidationError(err validator.FieldError) string {
 		return fmt.Sprintf("The %s field is required", err.Field())
 	case "email":
 		return fmt.Sprintf("The %s field is not a valid email", err.Field())
+	case "uuid":
+		return fmt.Sprintf("The %s field is not a valid uuid", err.Field())
 	default:
 		return fmt.Sprintf("Validation failed for %s with tag %s.", err.Field(), err.Tag())
 	}
@@ -89,7 +91,9 @@ func (a *authHandler) Register() gin.HandlerFunc {
 		rolesRes := make([]response.RoleInfoResponse, len(res.Roles))
 		for i, role := range res.Roles {
 			rolesRes[i] = response.RoleInfoResponse{
-				ID: role.ID,
+				ID:          role.ID,
+				Name:        role.Name,
+				Description: role.Description,
 			}
 		}
 		c.JSON(http.StatusOK, response.UserInfoResponse{

@@ -87,7 +87,7 @@ func (r *roleRepository) UpdateRoleByID(ctx context.Context, role model.Role) er
 }
 
 func (r *roleRepository) DeleteRoleByID(ctx context.Context, id string) error {
-	err := r.db.WithContext(ctx).Delete(&model.Role{}, id).Error
+	err := r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.Role{}).Error
 	if err != nil {
 		return fmt.Errorf("roleRepository.DeleteRoleByID: %w", err)
 	}

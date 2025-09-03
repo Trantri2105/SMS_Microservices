@@ -6,8 +6,6 @@ services:
       - "--providers.docker=true"
       - "--entrypoints.web.address=:8081"
       - "--providers.docker.exposedbydefault=false"
-      # - "--accesslog=true"
-      # - "--log.level=DEBUG"
     ports:
       - "8081:8081"
       - "8080:8080"

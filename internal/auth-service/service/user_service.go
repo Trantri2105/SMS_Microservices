@@ -45,10 +45,10 @@ func (u *userService) CreateUser(ctx context.Context, user model.User) (model.Us
 		}
 		roles, err := u.roleService.GetRolesByIDs(ctx, roleIDs)
 		if err != nil {
-			return model.User{}, fmt.Errorf("userRepository.GetRolesListByIDs: %w", err)
+			return model.User{}, fmt.Errorf("userService.CreateUser: %w", err)
 		}
 		if len(roles) != len(roleIDs) {
-			return model.User{}, fmt.Errorf("userRepository.GetRolesListByIDs: %w", apperrors.ErrInvalidRoles)
+			return model.User{}, fmt.Errorf("userService.CreateUser: %w", apperrors.ErrInvalidRoles)
 		}
 		user.Roles = roles
 	}

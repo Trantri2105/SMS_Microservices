@@ -20,7 +20,7 @@ func (a *authMiddleware) CheckUserPermission(requiredScope string) gin.HandlerFu
 		scopesHeader := c.Request.Header.Get("X-User-Scopes")
 		if len(scopesHeader) == 0 {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"message": "ScopeIDs header is empty",
+				"message": "X-User-Scopes header is empty",
 			})
 			return
 		}
