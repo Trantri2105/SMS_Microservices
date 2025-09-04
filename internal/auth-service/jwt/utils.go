@@ -75,15 +75,15 @@ func (u *utils) VerifyToken(tokenString string) (jwt.MapClaims, error) {
 	claims := jwt.MapClaims{}
 	parsedToken, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("jwt.Utils.VerifyToken: %v", apperrors.ErrInvalidToken)
+			return nil, fmt.Errorf("jwt.Utils.VerifyToken: %w", apperrors.ErrInvalidToken)
 		}
 		return []byte(u.secretKey), nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("jwt.Utils.VerifyToken: %v", apperrors.ErrInvalidToken)
+		return nil, fmt.Errorf("jwt.Utils.VerifyToken: %w", apperrors.ErrInvalidToken)
 	}
 	if !parsedToken.Valid {
-		return nil, fmt.Errorf("jwt.Utils.VerifyToken: %v", apperrors.ErrInvalidToken)
+		return nil, fmt.Errorf("jwt.Utils.VerifyToken: %w", apperrors.ErrInvalidToken)
 	}
 	return claims, nil
 }

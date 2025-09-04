@@ -43,7 +43,7 @@ func (u *userService) CreateUser(ctx context.Context, user model.User) (model.Us
 		for roleID := range roleMap {
 			roleIDs = append(roleIDs, roleID)
 		}
-		roles, err := u.roleService.GetRolesByIDs(ctx, roleIDs)
+		roles, err := u.roleService.GetRoleListByIDs(ctx, roleIDs)
 		if err != nil {
 			return model.User{}, fmt.Errorf("userService.CreateUser: %w", err)
 		}
@@ -90,7 +90,7 @@ func (u *userService) UpdateUserByID(ctx context.Context, user model.User) error
 		for roleID := range roleMap {
 			roleIDs = append(roleIDs, roleID)
 		}
-		roles, err := u.roleService.GetRolesByIDs(ctx, roleIDs)
+		roles, err := u.roleService.GetRoleListByIDs(ctx, roleIDs)
 		if err != nil {
 			return fmt.Errorf("userRepository.GetRolesListByIDs: %w", err)
 		}

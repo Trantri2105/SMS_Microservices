@@ -107,7 +107,7 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
-	routes.AddServerRoutes(r, serverHandler, m)
+	routes.SetUpServerRoutes(r, serverHandler, m)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", appConfig.Server.Port),

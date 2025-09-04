@@ -14,7 +14,7 @@ const (
 	ScopeServersDelete = "servers:delete"
 )
 
-func AddServerRoutes(r *gin.Engine, handler handler.ServerHandler, m middleware.AuthMiddleware) {
+func SetUpServerRoutes(r *gin.Engine, handler handler.ServerHandler, m middleware.AuthMiddleware) {
 	serverRoutes := r.Group("/servers")
 	serverRoutes.POST("", m.CheckUserPermission(ScopeServersCreate), handler.CreateServer())
 	serverRoutes.GET("", m.CheckUserPermission(ScopeServersRead), handler.GetServers())
