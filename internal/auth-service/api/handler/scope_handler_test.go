@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-func TestGetScopes(t *testing.T) {
+func TestScopeHandler_GetScopes(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

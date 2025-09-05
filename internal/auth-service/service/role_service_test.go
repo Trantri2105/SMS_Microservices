@@ -23,7 +23,7 @@ func TestNewRoleService(t *testing.T) {
 	assert.NotNil(t, service)
 }
 
-func TestCreateRole(t *testing.T) {
+func TestRoleService_CreateRole(t *testing.T) {
 	ctx := context.Background()
 	testError := errors.New("test repository error")
 
@@ -107,7 +107,7 @@ func TestCreateRole(t *testing.T) {
 	}
 }
 
-func TestUpdateRoleByID(t *testing.T) {
+func TestRoleService_UpdateRoleByID(t *testing.T) {
 	ctx := context.Background()
 	testError := errors.New("test repository error")
 
@@ -177,7 +177,7 @@ func TestUpdateRoleByID(t *testing.T) {
 	}
 }
 
-func TestDeleteRoleByID(t *testing.T) {
+func TestRoleService_DeleteRoleByID(t *testing.T) {
 	ctx := context.Background()
 	roleID := "test-role-id"
 	dbError := errors.New("db error")
@@ -223,7 +223,7 @@ func TestDeleteRoleByID(t *testing.T) {
 	}
 }
 
-func TestGetRoles(t *testing.T) {
+func TestRoleService_GetRoles(t *testing.T) {
 	ctx := context.Background()
 	testError := errors.New("database error")
 	expectedRoles := []model.Role{{ID: "1", Name: "Admin"}, {ID: "2", Name: "User"}}
@@ -280,7 +280,7 @@ func TestGetRoles(t *testing.T) {
 	}
 }
 
-func TestGetRoleByID(t *testing.T) {
+func TestRoleService_GetRoleByID(t *testing.T) {
 	ctx := context.Background()
 	testError := errors.New("database error")
 	roleID := "test-role-id"
@@ -330,7 +330,7 @@ func TestGetRoleByID(t *testing.T) {
 	}
 }
 
-func TestGetRoleListByIDs(t *testing.T) {
+func TestRoleService_GetRoleListByIDs(t *testing.T) {
 	ctx := context.Background()
 	testError := errors.New("database error")
 	roleIDs := []string{"id1", "id2"}

@@ -178,6 +178,9 @@ func (u *userHandler) UpdateUserRole() gin.HandlerFunc {
 					Message: "Invalid roles",
 				})
 			default:
+				c.JSON(http.StatusInternalServerError, response.Response{
+					Message: "Internal Server Error",
+				})
 				err = fmt.Errorf("userHandler.UpdateUserRole: %w", err)
 				u.logger.LoggingError(c, err, "failed to update user role by id", zap.ErrorLevel)
 			}
@@ -219,6 +222,7 @@ func (u *userHandler) UpdateUserPassword() gin.HandlerFunc {
 					Message: "Invalid password",
 				})
 			default:
+				err = fmt.Errorf("userHandler.UpdateUserPassword: %w", err)
 				u.logger.LoggingError(c, err, "failed to update user password", zap.ErrorLevel)
 				c.JSON(http.StatusInternalServerError, response.Response{
 					Message: "Internal server error",

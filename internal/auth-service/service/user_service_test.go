@@ -18,7 +18,7 @@ func hashPassword(password string) string {
 	return string(bytes)
 }
 
-func TestGetUsers(t *testing.T) {
+func TestUserService_GetUsers(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockUserRepo := mockrepository.NewMockUserRepository(ctrl)
 	u := NewUserService(mockUserRepo, nil)
@@ -80,7 +80,7 @@ func TestGetUsers(t *testing.T) {
 	}
 }
 
-func TestCreateUser(t *testing.T) {
+func TestUserService_CreateUser(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockUserRepo := mockrepository.NewMockUserRepository(ctrl)
@@ -195,7 +195,7 @@ func TestCreateUser(t *testing.T) {
 	}
 }
 
-func TestGetUserByEmail(t *testing.T) {
+func TestUserService_GetUserByEmail(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -250,7 +250,7 @@ func TestGetUserByEmail(t *testing.T) {
 	}
 }
 
-func TestGetUserById(t *testing.T) {
+func TestUserService_GetUserById(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -304,7 +304,7 @@ func TestGetUserById(t *testing.T) {
 	}
 }
 
-func TestUpdateUserByID(t *testing.T) {
+func TestUserService_UpdateUserByID(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -404,7 +404,7 @@ func TestUpdateUserByID(t *testing.T) {
 	}
 }
 
-func TestUpdateUserPassword(t *testing.T) {
+func TestUserService_UpdateUserPassword(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 

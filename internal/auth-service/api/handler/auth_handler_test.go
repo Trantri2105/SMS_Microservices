@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-func TestRegister(t *testing.T) {
+func TestAuthHandler_Register(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -104,7 +104,7 @@ func TestRegister(t *testing.T) {
 	}
 }
 
-func TestLogin(t *testing.T) {
+func TestAuthHandler_Login(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -204,7 +204,7 @@ func TestLogin(t *testing.T) {
 	}
 }
 
-func TestLogout(t *testing.T) {
+func TestAuthHandler_Logout(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -264,7 +264,7 @@ func TestLogout(t *testing.T) {
 	}
 }
 
-func TestRefresh(t *testing.T) {
+func TestAuthHandler_Refresh(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -357,7 +357,7 @@ func TestRefresh(t *testing.T) {
 	}
 }
 
-func TestVerifyToken(t *testing.T) {
+func TestAuthHandler_VerifyToken(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	handler := NewAuthHandler(nil, nil) // No dependencies needed for this handler
 
