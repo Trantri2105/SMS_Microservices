@@ -3,6 +3,7 @@ package health_check_consumer
 import (
 	"VCS_SMS_Microservice/internal/server-service/model"
 	"VCS_SMS_Microservice/internal/server-service/repository"
+	"VCS_SMS_Microservice/pkg/infra"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,7 +11,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
 )
 
@@ -20,7 +20,7 @@ type HealthCheckConsumer interface {
 }
 
 type healthCheckConsumer struct {
-	kafkaReader *kafka.Reader
+	kafkaReader infra.KafkaReader
 	serverRepo  repository.ServerRepository
 	logger      *zap.Logger
 }
@@ -43,6 +43,13 @@ func (h *healthCheckConsumer) Start() {
 				continue
 			}
 			if m.Value == nil {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				err = h.kafkaReader.CommitMessages(ctx, m)
+				cancel()
+				if err != nil {
+					err = fmt.Errorf("healthCheckConsumer.Start: %w", err)
+					h.logger.Log(zap.ErrorLevel, "failed to commit messages", zap.Error(err))
+				}
 				continue
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
@@ -82,7 +89,7 @@ func (h *healthCheckConsumer) Stop() {
 	h.kafkaReader.Close()
 }
 
-func NewHealthCheckConsumer(reader *kafka.Reader, serverRepo repository.ServerRepository, logger *zap.Logger) HealthCheckConsumer {
+func NewHealthCheckConsumer(reader infra.KafkaReader, serverRepo repository.ServerRepository, logger *zap.Logger) HealthCheckConsumer {
 	return &healthCheckConsumer{
 		kafkaReader: reader,
 		serverRepo:  serverRepo,

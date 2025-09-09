@@ -11,7 +11,7 @@ import (
 
 type ServerService interface {
 	CreateServer(ctx context.Context, server model.Server) (model.Server, error)
-	CreateServers(ctx context.Context, server []model.Server) (insertedServers []model.Server, nonInsertedServer []model.Server, err error)
+	ImportServers(ctx context.Context, server []model.Server) (insertedServers []model.Server, nonInsertedServer []model.Server, err error)
 	UpdateServer(ctx context.Context, updatedServerData model.Server) (model.Server, error)
 	DeleteServer(ctx context.Context, id string) error
 	GetServers(ctx context.Context, serverName string, status string, sortBy string, sortOrder string, limit int, offset int) ([]model.Server, error)
@@ -131,13 +131,13 @@ func (s *serverService) CreateServer(ctx context.Context, server model.Server) (
 	return createdServer, nil
 }
 
-func (s *serverService) CreateServers(ctx context.Context, servers []model.Server) (insertedServers []model.Server, nonInsertedServers []model.Server, err error) {
+func (s *serverService) ImportServers(ctx context.Context, servers []model.Server) (insertedServers []model.Server, nonInsertedServers []model.Server, err error) {
 	for i := range servers {
 		servers[i].Status = model.ServerStatusPending
 	}
 	insertedServers, nonInsertedServers, err = s.serverRepository.ImportServers(ctx, servers)
 	if err != nil {
-		err = fmt.Errorf("ServerService.CreateServers: %w", err)
+		err = fmt.Errorf("ServerService.ImportServers: %w", err)
 	}
 	return
 }

@@ -3,6 +3,7 @@ package consumer
 import (
 	"VCS_SMS_Microservice/internal/scheduler/model"
 	"VCS_SMS_Microservice/internal/scheduler/repository"
+	"VCS_SMS_Microservice/pkg/infra"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,7 +11,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
 )
 
@@ -20,10 +20,9 @@ type ServerConsumer interface {
 }
 
 type serverConsumer struct {
-	repo     repository.ServerRepository
-	kafka    *kafka.Reader
-	logger   *zap.Logger
-	stopChan chan struct{}
+	repo   repository.ServerRepository
+	kafka  infra.KafkaReader
+	logger *zap.Logger
 }
 
 type serverEvent struct {
@@ -55,6 +54,13 @@ func (s *serverConsumer) Start() {
 				continue
 			}
 			if m.Value == nil {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				err = s.kafka.CommitMessages(ctx, m)
+				cancel()
+				if err != nil {
+					err = fmt.Errorf("serverConsumer.Start: %w", err)
+					s.logger.Log(zap.ErrorLevel, "failed to commit messages", zap.Error(err))
+				}
 				continue
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -121,12 +127,11 @@ func (s *serverConsumer) Start() {
 	}()
 }
 
-// Stop consumer will also close kafka reader
 func (s *serverConsumer) Stop() {
 	s.kafka.Close()
 }
 
-func NewServerConsumer(repo repository.ServerRepository, logger *zap.Logger, kafka *kafka.Reader) ServerConsumer {
+func NewServerConsumer(repo repository.ServerRepository, logger *zap.Logger, kafka infra.KafkaReader) ServerConsumer {
 	return &serverConsumer{
 		repo:   repo,
 		kafka:  kafka,

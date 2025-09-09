@@ -434,7 +434,7 @@ func (s *serverHandler) ImportServersFromExcelFile() gin.HandlerFunc {
 			return
 		}
 
-		importedServers, nonImportedServers, err := s.serverService.CreateServers(c, validServers)
+		importedServers, nonImportedServers, err := s.serverService.ImportServers(c, validServers)
 		if err != nil {
 			err = fmt.Errorf("ServerHandler.ImportServersFromExcelFile: %w", err)
 			s.loggingError(c, err, "failed to import server", zap.ErrorLevel)

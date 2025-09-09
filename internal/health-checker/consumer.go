@@ -2,6 +2,7 @@ package health_checker
 
 import (
 	"VCS_SMS_Microservice/internal/server-service/model"
+	"VCS_SMS_Microservice/pkg/infra"
 	"context"
 	"encoding/json"
 	"errors"
@@ -20,8 +21,8 @@ type Consumer interface {
 }
 
 type consumer struct {
-	kafkaReader  *kafka.Reader
-	kafkaWriter  *kafka.Writer
+	kafkaReader  infra.KafkaReader
+	kafkaWriter  infra.KafkaWriter
 	serverClient ServerClient
 	logger       *zap.Logger
 }
@@ -47,6 +48,13 @@ func (c *consumer) Start() {
 				continue
 			}
 			if m.Value == nil {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				err = c.kafkaReader.CommitMessages(ctx, m)
+				cancel()
+				if err != nil {
+					err = fmt.Errorf("consumer.Start: %w", err)
+					c.logger.Log(zap.ErrorLevel, "failed to commit messages", zap.Error(err))
+				}
 				continue
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
@@ -62,7 +70,7 @@ func (c *consumer) Start() {
 				}
 				continue
 			}
-			err = c.PerformHealthCheck(ctx, event.ID, event.Ipv4, event.Port, event.HealthCheckInterval, event.HealthEndpoint)
+			err = c.performHealthCheck(ctx, event.ID, event.Ipv4, event.Port, event.HealthCheckInterval, event.HealthEndpoint)
 			if err != nil {
 				cancel()
 				err = fmt.Errorf("consumer.Start: %w", err)
@@ -79,11 +87,11 @@ func (c *consumer) Start() {
 	}()
 }
 
-func (c *consumer) PerformHealthCheck(ctx context.Context, serverID string, ipv4 string, port int, healthCheckInterval int, healthEndpoint string) error {
+func (c *consumer) performHealthCheck(ctx context.Context, serverID string, ipv4 string, port int, healthCheckInterval int, healthEndpoint string) error {
 	start := time.Now()
 	res, err := c.serverClient.GetServerHealthCheck(ctx, ipv4, port, healthEndpoint)
 	if err != nil {
-		return fmt.Errorf("Checker.PerformHealthCheck: %w", err)
+		return fmt.Errorf("Checker.performHealthCheck: %w", err)
 	}
 	healthCheck := struct {
 		ServerID                       string    `json:"server_id"`
@@ -118,14 +126,14 @@ func (c *consumer) PerformHealthCheck(ctx context.Context, serverID string, ipv4
 	healthCheck.IntervalSinceLastHealthCheckMs = int64(healthCheckInterval*1000) + healthCheck.Timestamp.Sub(start).Milliseconds()
 	b, err := json.Marshal(healthCheck)
 	if err != nil {
-		return fmt.Errorf("Checker.PerformHealthCheck: %w", err)
+		return fmt.Errorf("Checker.performHealthCheck: %w", err)
 	}
 	err = c.kafkaWriter.WriteMessages(ctx, kafka.Message{
 		Key:   []byte(serverID),
 		Value: b,
 	})
 	if err != nil {
-		return fmt.Errorf("Checker.PerformHealthCheck: %w", err)
+		return fmt.Errorf("Checker.performHealthCheck: %w", err)
 	}
 	return nil
 }
@@ -135,7 +143,7 @@ func (c *consumer) Stop() {
 	c.kafkaReader.Close()
 }
 
-func NewConsumer(reader *kafka.Reader, writer *kafka.Writer, serverClient ServerClient, logger *zap.Logger) Consumer {
+func NewConsumer(reader infra.KafkaReader, writer infra.KafkaWriter, serverClient ServerClient, logger *zap.Logger) Consumer {
 	return &consumer{
 		kafkaReader:  reader,
 		kafkaWriter:  writer,

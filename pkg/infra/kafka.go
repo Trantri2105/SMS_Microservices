@@ -1,6 +1,21 @@
 package infra
 
-import "github.com/segmentio/kafka-go"
+import (
+	"context"
+
+	"github.com/segmentio/kafka-go"
+)
+
+type KafkaReader interface {
+	FetchMessage(ctx context.Context) (kafka.Message, error)
+	CommitMessages(ctx context.Context, msgs ...kafka.Message) error
+	Close() error
+}
+
+type KafkaWriter interface {
+	WriteMessages(ctx context.Context, msgs ...kafka.Message) error
+	Close() error
+}
 
 func NewKafkaWriter(brokers []string, topic string) *kafka.Writer {
 	return &kafka.Writer{
@@ -13,8 +28,8 @@ func NewKafkaWriter(brokers []string, topic string) *kafka.Writer {
 
 func NewKafkaReader(brokers []string, consumerGroupID string, topic string) *kafka.Reader {
 	return kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     brokers,
-		GroupID:     consumerGroupID,
-		Topic:       topic,
+		Brokers: brokers,
+		GroupID: consumerGroupID,
+		Topic:   topic,
 	})
 }
