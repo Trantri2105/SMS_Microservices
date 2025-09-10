@@ -17,7 +17,7 @@ type KafkaWriter interface {
 	Close() error
 }
 
-func NewKafkaWriter(brokers []string, topic string) *kafka.Writer {
+func NewKafkaWriter(brokers []string, topic string) KafkaWriter {
 	return &kafka.Writer{
 		Addr:         kafka.TCP(brokers...),
 		Topic:        topic,
@@ -26,7 +26,7 @@ func NewKafkaWriter(brokers []string, topic string) *kafka.Writer {
 	}
 }
 
-func NewKafkaReader(brokers []string, consumerGroupID string, topic string) *kafka.Reader {
+func NewKafkaReader(brokers []string, consumerGroupID string, topic string) KafkaReader {
 	return kafka.NewReader(kafka.ReaderConfig{
 		Brokers: brokers,
 		GroupID: consumerGroupID,
