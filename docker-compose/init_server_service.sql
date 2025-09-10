@@ -12,4 +12,5 @@ CREATE TABLE servers (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
+CREATE INDEX servers_created_at_idx ON servers (created_at);
 ALTER TABLE servers REPLICA IDENTITY FULL;

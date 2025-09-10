@@ -58,7 +58,7 @@ func (s *serverScheduler) onTick() {
 		for _, server := range servers {
 			b, e := json.Marshal(server)
 			if e != nil {
-				e = fmt.Errorf("TimeWheel.worker: %w", e)
+				e = fmt.Errorf("serverScheduler.onTick: %w", e)
 				s.logger.Error("failed to marshal server info", zap.Error(e), zap.String("server_id", server.ID))
 			} else {
 				messages = append(messages, kafka.Message{

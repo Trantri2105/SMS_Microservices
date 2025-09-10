@@ -562,12 +562,16 @@ func (s *serverHandler) UpdateServer() gin.HandlerFunc {
 		}
 		id := c.Param("id")
 		updatedData := model.Server{
-			ID:                  id,
-			ServerName:          req.ServerName,
-			Ipv4:                req.Ipv4,
-			Port:                *req.Port,
-			HealthEndpoint:      req.HealthEndpoint,
-			HealthCheckInterval: *req.HealthCheckInterval,
+			ID:             id,
+			ServerName:     req.ServerName,
+			Ipv4:           req.Ipv4,
+			HealthEndpoint: req.HealthEndpoint,
+		}
+		if req.Port != nil {
+			updatedData.Port = *req.Port
+		}
+		if req.HealthCheckInterval != nil {
+			updatedData.HealthCheckInterval = *req.HealthCheckInterval
 		}
 		updatedServer, err := s.serverService.UpdateServer(c, updatedData)
 		if err != nil {

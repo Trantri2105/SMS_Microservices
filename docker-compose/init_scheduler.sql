@@ -10,4 +10,5 @@ CREATE TABLE servers (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
+CREATE INDEX servers_next_health_check_at_idx ON servers(next_health_check_at);
 

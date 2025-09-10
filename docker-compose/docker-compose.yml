@@ -225,7 +225,7 @@ services:
       LOG_LEVEL: info
 
       MAIL_EMAIL: tringuyenhn03@gmail.com
-      MAIL_PASSWORD: zxda bgjn aqhb yppb
+      MAIL_PASSWORD:
       MAIL_HOST: smtp.gmail.com
       MAIL_PORT: 587
       MAIL_ADMIN_EMAIL: tringuyenhn03@gmail.com
@@ -272,9 +272,9 @@ services:
       dockerfile: ./build/health-checker/Dockerfile
     environment:
       LOG_LEVEL: info
-      MAX_RETRIES: 5
+      MAX_RETRIES: 3
       INITIAL_BACKOFF: 1s
-      REQUEST_TIMEOUT: 1s
+      REQUEST_TIMEOUT: 3s
 
       KAFKA_BROKERS: kafka:9092
       KAFKA_CONSUMER_TOPIC: server_checks_events

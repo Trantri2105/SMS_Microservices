@@ -57,7 +57,7 @@ func (c *consumer) Start() {
 				}
 				continue
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 			var event serverEvent
 			if err = json.Unmarshal(m.Value, &event); err != nil {
 				err = fmt.Errorf("consumer.Start: %w", err)
